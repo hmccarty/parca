@@ -16,15 +16,15 @@ func NewLeaderboardCommand(createDbClient func() m.DbClient) m.Command {
 	}
 }
 
-func (_ *Leaderboard) Name() string {
+func (*Leaderboard) Name() string {
 	return "leaderboard"
 }
 
-func (_ *Leaderboard) Description() string {
+func (*Leaderboard) Description() string {
 	return "Prints richest users on server"
 }
 
-func (_ *Leaderboard) Options() []m.CommandOption {
+func (*Leaderboard) Options() []m.CommandOption {
 	return []m.CommandOption{}
 }
 

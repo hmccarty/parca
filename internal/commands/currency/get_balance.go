@@ -16,15 +16,15 @@ func NewGetBalanceCommand(createDbClient func() m.DbClient) m.Command {
 	}
 }
 
-func (_ *GetBalance) Name() string {
+func (*GetBalance) Name() string {
 	return "getbalance"
 }
 
-func (_ *GetBalance) Description() string {
+func (*GetBalance) Description() string {
 	return "Gets the balance of a user"
 }
 
-func (_ *GetBalance) Options() []m.CommandOption {
+func (*GetBalance) Options() []m.CommandOption {
 	return []m.CommandOption{
 		{
 			Name:     "user",

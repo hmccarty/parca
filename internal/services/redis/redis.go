@@ -45,8 +45,7 @@ func (r *RedisClient) GetUserBalance(userID string) (float64, error) {
 		return 0, err
 	}
 
-	balance, err := strconv.ParseFloat(val, 64)
-	return balance, nil
+	return strconv.ParseFloat(val, 64)
 }
 
 func (r *RedisClient) SetUserBalance(userID string, guildID string, balance float64) error {

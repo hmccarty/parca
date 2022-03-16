@@ -16,15 +16,15 @@ func NewSetBalanceCommand(createDbClient func() m.DbClient) m.Command {
 	}
 }
 
-func (_ *SetBalance) Name() string {
+func (*SetBalance) Name() string {
 	return "setbalance"
 }
 
-func (_ *SetBalance) Description() string {
+func (*SetBalance) Description() string {
 	return "Sets the balance of a user"
 }
 
-func (_ *SetBalance) Options() []m.CommandOption {
+func (*SetBalance) Options() []m.CommandOption {
 	return []m.CommandOption{
 		{
 			Name:     "user",

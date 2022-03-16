@@ -18,16 +18,16 @@ type CommandOptionType uint8
 
 const (
 	SubCommandOption      CommandOptionType = 1
-	SubCommandGroupOption                   = 2
-	StringOption                            = 3
-	IntegerOption                           = 4
-	BooleanOption                           = 5
-	UserOption                              = 6
-	ChannelOption                           = 7
-	RoleOption                              = 8
-	MentionableOption                       = 9
-	NumberOption                            = 10
-	AttachmentOption                        = 11
+	SubCommandGroupOption CommandOptionType = 2
+	StringOption          CommandOptionType = 3
+	IntegerOption         CommandOptionType = 4
+	BooleanOption         CommandOptionType = 5
+	UserOption            CommandOptionType = 6
+	ChannelOption         CommandOptionType = 7
+	RoleOption            CommandOptionType = 8
+	MentionableOption     CommandOptionType = 9
+	NumberOption          CommandOptionType = 10
+	AttachmentOption      CommandOptionType = 11
 )
 
 type CommandOption struct {
