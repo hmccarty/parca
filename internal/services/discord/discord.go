@@ -4,7 +4,6 @@ import (
 	"log"
 
 	dg "github.com/bwmarrin/discordgo"
-	"github.com/hmccarty/arc-assistant/internal/models"
 	m "github.com/hmccarty/arc-assistant/internal/models"
 	c "github.com/hmccarty/arc-assistant/internal/services/config"
 )
@@ -67,48 +66,20 @@ func (d *DiscordSession) Close() {
 	d.Session.Close()
 }
 
-func appFromCommand(command m.Command) *dg.ApplicationCommand {
-	var appOptions []*dg.ApplicationCommandOption = nil
-	if len(command.Options()) > 0 {
-		appOptions = make([]*dg.ApplicationCommandOption, len(command.Options()))
-		for i, v := range command.Options() {
-			appOptions[i] = &dg.ApplicationCommandOption{
-				Type:        dg.ApplicationCommandOptionType(v.Type),
-				Name:        v.Name,
-				Required:    v.Required,
-				Description: "Description",
-			}
-		}
-	}
-
-	return &dg.ApplicationCommand{
-		Name:        command.Name(),
-		Description: command.Description(),
-		Options:     appOptions,
-	}
-}
-
-func optionFromInteractionData(interactionData *dg.ApplicationCommandInteractionDataOption) (models.CommandOption, error) {
-	option := m.CommandOption{
-		Name:  interactionData.Name,
-		Type:  m.CommandOptionType(interactionData.Type),
-		Value: interactionData.Value,
-	}
-	return option, nil
-}
-
 func createDiscordHandler(command m.Command) DiscordHandler {
 	return func(s *dg.Session, i *dg.InteractionCreate) {
-		options := make([]m.CommandOption, len(i.ApplicationCommandData().Options))
-		for i, v := range i.ApplicationCommandData().Options {
-			option, err := optionFromInteractionData(v)
+		data, _ := dataFromInteraction(i.Interaction)
+		appData := i.ApplicationCommandData()
+		options := make([]m.CommandOption, len(appData.Options))
+		for i, v := range appData.Options {
+			option, err := optionFromInteraction(v)
 			if err != nil {
 				log.Println(err)
 			}
 			options[i] = option
 		}
 
-		content := command.Run(options)
+		content := command.Run(data, options)
 		s.InteractionRespond(i.Interaction, &dg.InteractionResponse{
 			Type: dg.InteractionResponseChannelMessageWithSource,
 			Data: &dg.InteractionResponseData{

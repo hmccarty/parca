@@ -4,7 +4,14 @@ type Command interface {
 	Name() string
 	Description() string
 	Options() []CommandOption
-	Run(options []CommandOption) string
+	Run(data CommandData, opts []CommandOption) string
+}
+
+type CommandData struct {
+	GuildID   string
+	ChannelID string
+	User      *User
+	Member    *Member
 }
 
 type CommandOptionType uint8
@@ -32,39 +39,18 @@ type CommandOption struct {
 }
 
 type User struct {
-	ID            string
-	Email         string
-	Username      string
-	Avatar        string
-	Locale        string
-	Discriminator string
-	Token         string
-	Verified      bool
-	MFAEnabled    bool
-	Banner        string
-	AccentColor   int
-	Bot           bool
-	PublicFlags   UserFlags
-	PremiumType   int
-	System        bool
-	Flags         int
+	ID       string
+	Email    string
+	Username string
 }
 
-type UserFlags int
+type Member struct {
+	GuildID string
+	User    *User
+	Roles   []string
+}
 
-const (
-	UserFlagDiscordEmployee           UserFlags = 1 << 0
-	UserFlagDiscordPartner            UserFlags = 1 << 1
-	UserFlagHypeSquadEvents           UserFlags = 1 << 2
-	UserFlagBugHunterLevel1           UserFlags = 1 << 3
-	UserFlagHouseBravery              UserFlags = 1 << 6
-	UserFlagHouseBrilliance           UserFlags = 1 << 7
-	UserFlagHouseBalance              UserFlags = 1 << 8
-	UserFlagEarlySupporter            UserFlags = 1 << 9
-	UserFlagTeamUser                  UserFlags = 1 << 10
-	UserFlagSystem                    UserFlags = 1 << 12
-	UserFlagBugHunterLevel2           UserFlags = 1 << 14
-	UserFlagVerifiedBot               UserFlags = 1 << 16
-	UserFlagVerifiedBotDeveloper      UserFlags = 1 << 17
-	UserFlagDiscordCertifiedModerator UserFlags = 1 << 18
-)
+type Role struct {
+	ID   string
+	Name string
+}

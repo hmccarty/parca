@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/hmccarty/arc-assistant/internal/commands"
+	"github.com/hmccarty/arc-assistant/internal/commands/currency"
 	"github.com/hmccarty/arc-assistant/internal/models"
 	"github.com/hmccarty/arc-assistant/internal/services/config"
 	"github.com/hmccarty/arc-assistant/internal/services/discord"
@@ -25,8 +25,9 @@ func main() {
 	}
 
 	var commandList = []models.Command{
-		commands.NewGetBalanceCommand(createDbClient),
-		commands.NewSetBalanceCommand(createDbClient),
+		currency.NewGetBalanceCommand(createDbClient),
+		currency.NewSetBalanceCommand(createDbClient),
+		currency.NewLeaderboardCommand(createDbClient),
 	}
 
 	session, err := discord.NewDiscordSession(conf, commandList)

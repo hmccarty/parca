@@ -1,4 +1,4 @@
-package commands
+package currency
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func (_ *SetBalance) Name() string {
 }
 
 func (_ *SetBalance) Description() string {
-	return "SetBalance for the tip!"
+	return "Sets the balance of a user"
 }
 
 func (_ *SetBalance) Options() []m.CommandOption {
@@ -39,7 +39,7 @@ func (_ *SetBalance) Options() []m.CommandOption {
 	}
 }
 
-func (command *SetBalance) Run(opts []m.CommandOption) string {
+func (command *SetBalance) Run(data m.CommandData, opts []m.CommandOption) string {
 	if len(opts) != 2 {
 		return "Invalid number of options"
 	}
@@ -56,7 +56,7 @@ func (command *SetBalance) Run(opts []m.CommandOption) string {
 	}
 
 	client := command.createDbClient()
-	client.SetUserBalance(userID, amount)
+	client.SetUserBalance(userID, data.GuildID, amount)
 	balance, _ := client.GetUserBalance(userID)
-	return fmt.Sprintf("You have %f in your account", balance)
+	return fmt.Sprintf("You have %.2f in your account", balance)
 }
