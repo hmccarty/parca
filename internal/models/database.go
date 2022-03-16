@@ -1,7 +1,7 @@
 package models
 
 import (
-	c "github.com/hmccarty/arc-assistant/internal/services/config"
+	c "github.com/hmccarty/parca/internal/services/config"
 )
 
 type DbClient interface {

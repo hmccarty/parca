@@ -3,7 +3,7 @@ package currency
 import (
 	"fmt"
 
-	m "github.com/hmccarty/arc-assistant/internal/models"
+	m "github.com/hmccarty/parca/internal/models"
 )
 
 const (

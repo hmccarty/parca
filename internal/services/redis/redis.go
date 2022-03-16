@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	"github.com/go-redis/redis/v8"
-	m "github.com/hmccarty/arc-assistant/internal/models"
-	c "github.com/hmccarty/arc-assistant/internal/services/config"
+	m "github.com/hmccarty/parca/internal/models"
+	c "github.com/hmccarty/parca/internal/services/config"
 )
 
 const (

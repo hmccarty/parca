@@ -4,8 +4,8 @@ import (
 	"log"
 
 	dg "github.com/bwmarrin/discordgo"
-	m "github.com/hmccarty/arc-assistant/internal/models"
-	c "github.com/hmccarty/arc-assistant/internal/services/config"
+	m "github.com/hmccarty/parca/internal/models"
+	c "github.com/hmccarty/parca/internal/services/config"
 )
 
 type DiscordHandler func(*dg.Session, *dg.InteractionCreate)

@@ -17,6 +17,7 @@ Calendar:
 - print_calendars ( )
 - today           ( )
 - week            ( )
+- add_event       ( )
 
 General:
 - status           ( )

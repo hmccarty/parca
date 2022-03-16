@@ -2,7 +2,7 @@ package discord
 
 import (
 	dg "github.com/bwmarrin/discordgo"
-	m "github.com/hmccarty/arc-assistant/internal/models"
+	m "github.com/hmccarty/parca/internal/models"
 )
 
 func appFromCommand(command m.Command) *dg.ApplicationCommand {

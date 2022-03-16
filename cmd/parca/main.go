@@ -7,11 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/hmccarty/arc-assistant/internal/commands/currency"
-	"github.com/hmccarty/arc-assistant/internal/models"
-	"github.com/hmccarty/arc-assistant/internal/services/config"
-	"github.com/hmccarty/arc-assistant/internal/services/discord"
-	"github.com/hmccarty/arc-assistant/internal/services/redis"
+	"github.com/hmccarty/parca/internal/commands/currency"
+	"github.com/hmccarty/parca/internal/models"
+	"github.com/hmccarty/parca/internal/services/config"
+	"github.com/hmccarty/parca/internal/services/discord"
+	"github.com/hmccarty/parca/internal/services/redis"
 )
 
 func main() {
