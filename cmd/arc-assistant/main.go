@@ -29,6 +29,7 @@ func main() {
 		currency.NewSetBalanceCommand(createDbClient),
 		currency.NewLeaderboardCommand(createDbClient),
 		currency.NewThanksCommand(createDbClient),
+		currency.NewPayCommand(createDbClient),
 	}
 
 	session, err := discord.NewDiscordSession(conf, commandList)

@@ -5,34 +5,34 @@ Replacement for the former ARC assistant.
 ## Commands
 
 Currency:
-	- get_balance (X)
-	- set_balance (X)
-	- leaderboard (X)
-	- thanks      ( )
-	- pay         ( )
+- get_balance (X)
+- set_balance (X)
+- leaderboard (X)
+- thanks      (X)
+- pay         (X)
 
 Calendar:
-	- set_calendar    ( )
-	- remove_calendar ( )
-	- print_calendars ( )
-	- today           ( )
-	- week            ( )
+- set_calendar    ( )
+- remove_calendar ( )
+- print_calendars ( )
+- today           ( )
+- week            ( )
 
 General:
-	- status           ( )
-	- poll             ( )
-	- 8ball            ( )
-	- create_role_menu ( )
-	- remind           ( )
+- status           ( )
+- poll             ( )
+- 8ball            ( )
+- create_role_menu ( )
+- remind           ( )
 
 Domain verification:
-	- configuredomain ( )
-	- verify          ( )
+- configuredomain ( )
+- verify          ( )
 
 Games:
-	- arcdle ( )
-	- daily  ( )
-	- bounty ( )
+- arcdle ( )
+- daily  ( )
+- bounty ( )
 
 ## REDIS Structure
 

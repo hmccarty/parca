@@ -1,2 +1,5 @@
 # Binaries
 bot
+
+# Redis
+*.rdb

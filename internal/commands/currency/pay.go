@@ -6,41 +6,41 @@ import (
 	m "github.com/hmccarty/arc-assistant/internal/models"
 )
 
-const (
-	amount float64 = 5.0
-	txnFee         = 0.5
-)
-
-type Thanks struct {
+type Pay struct {
 	createDbClient func() m.DbClient
 }
 
-func NewThanksCommand(createDbClient func() m.DbClient) m.Command {
-	return &Thanks{
+func NewPayCommand(createDbClient func() m.DbClient) m.Command {
+	return &Pay{
 		createDbClient: createDbClient,
 	}
 }
 
-func (*Thanks) Name() string {
-	return "thanks"
+func (*Pay) Name() string {
+	return "pay"
 }
 
-func (*Thanks) Description() string {
+func (*Pay) Description() string {
 	return "Sends a token of gratitude to another user (with txn fee)"
 }
 
-func (*Thanks) Options() []m.CommandOption {
+func (*Pay) Options() []m.CommandOption {
 	return []m.CommandOption{
 		{
 			Name:     "receiver",
 			Type:     m.UserOption,
 			Required: true,
 		},
+		{
+			Name:     "amount",
+			Type:     m.NumberOption,
+			Required: true,
+		},
 	}
 }
 
-func (command *Thanks) Run(data m.CommandData, opts []m.CommandOption) string {
-	if len(opts) != 1 {
+func (command *Pay) Run(data m.CommandData, opts []m.CommandOption) string {
+	if len(opts) != 2 {
 		return "Invalid number of options"
 	}
 
@@ -56,11 +56,12 @@ func (command *Thanks) Run(data m.CommandData, opts []m.CommandOption) string {
 	}
 
 	senderBalance, err := client.GetUserBalance(senderID)
+	amount := opts[1].Value.(float64)
 	if err != nil {
 		return fmt.Sprintf("Failed to get balance of <@%s>", senderID)
-	} else if senderBalance < txnFee {
+	} else if senderBalance < amount {
 		return fmt.Sprintf("Insufficient funds, you have %.2f coins and %.2f are required",
-			senderBalance, txnFee)
+			senderBalance, amount)
 	}
 
 	receiverID := opts[0].Value.(string)
@@ -73,7 +74,7 @@ func (command *Thanks) Run(data m.CommandData, opts []m.CommandOption) string {
 		return fmt.Sprintf("Failed to get balance of <@%s>", receiverID)
 	}
 
-	client.SetUserBalance(senderID, data.GuildID, senderBalance-txnFee)
+	client.SetUserBalance(senderID, data.GuildID, senderBalance-amount)
 	client.SetUserBalance(receiverID, data.GuildID, receiverBalance+amount)
-	return fmt.Sprintf("Sent <@%s> %.2f ARC coins", receiverID, amount)
+	return fmt.Sprintf("Paid <@%s> %.2f ARC coins", receiverID, amount)
 }
