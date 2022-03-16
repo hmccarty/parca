@@ -1,3 +1,3 @@
-## Architecture
+# PARCA
 
-Config & Commands -> Discord service (can be replaced with Mock)
+Replacement for the former ARC assistant.
