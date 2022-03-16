@@ -32,7 +32,7 @@ func (command *Leaderboard) Run(data m.CommandData, _ []m.CommandOption) string 
 	client := command.createDbClient()
 	balances, err := client.GetBalancesFromGuild(data.GuildID)
 	if err != nil {
-		return "Failed"
+		return "Everybody is broke"
 	}
 
 	var msg string = ""

@@ -25,9 +25,10 @@ func main() {
 	}
 
 	var commandList = []models.Command{
-		currency.NewGetBalanceCommand(createDbClient),
+		currency.NewBalanceCommand(createDbClient),
 		currency.NewSetBalanceCommand(createDbClient),
 		currency.NewLeaderboardCommand(createDbClient),
+		currency.NewThanksCommand(createDbClient),
 	}
 
 	session, err := discord.NewDiscordSession(conf, commandList)
