@@ -4,7 +4,7 @@ import "time"
 
 type CalendarClient interface {
 	GetCalendarData(string) (CalendarData, error)
-	GetCalendarEvents(string) ([]CalendarEventData, error)
+	GetCalendarEvents(string, time.Time) ([]CalendarEventData, error)
 }
 
 type CalendarData struct {

@@ -6,9 +6,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/hmccarty/parca/internal/commands/currency"
 	"github.com/hmccarty/parca/internal/models"
+	"github.com/hmccarty/parca/internal/services/calendar"
 	"github.com/hmccarty/parca/internal/services/config"
 	"github.com/hmccarty/parca/internal/services/discord"
 	"github.com/hmccarty/parca/internal/services/redis"
@@ -16,6 +18,13 @@ import (
 
 func main() {
 	conf, err := config.NewConfig("config/main.yml")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	calendarClient := calendar.NewGoogleCalendarClient(conf)
+	fmt.Println("Finished building client")
+	_, err = calendarClient.GetCalendarEvents("harrison.s.mccarty@gmail.com", time.Now().UTC().Add(5*time.Hour))
 	if err != nil {
 		fmt.Println(err)
 	}

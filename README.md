@@ -64,10 +64,8 @@ backlog: [str]
 
 calendar:
 	<guildid>:
-		[
-			- channel: [channelid]
-			- calendar: [calendarid]
-		]
+		<channelid>:
+			- [calendarid]
 
 bounty:
 	<guildid>:
