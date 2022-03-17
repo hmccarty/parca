@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/bwmarrin/discordgo v0.24.0
 	github.com/go-redis/redis/v8 v8.11.4
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	gopkg.in/yaml.v2 v2.4.0
 )
 
