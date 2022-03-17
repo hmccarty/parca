@@ -34,12 +34,14 @@ func (*Balance) Options() []m.CommandOption {
 	}
 }
 
-func (command *Balance) Run(data m.CommandData, opts []m.CommandOption) string {
+func (command *Balance) Run(data m.CommandData, opts []m.CommandOption) m.Response {
 	var userID string
 	if len(opts) == 1 {
 		userID = opts[0].Value.(string)
 	} else if data.User == nil && data.Member == nil {
-		return "You must be logged in to use this command"
+		return m.Response{
+			Description: "You must be logged in to use this command",
+		}
 	} else if data.User != nil {
 		userID = data.User.ID
 	} else {
@@ -48,5 +50,7 @@ func (command *Balance) Run(data m.CommandData, opts []m.CommandOption) string {
 
 	client := command.createDbClient()
 	balance, _ := client.GetUserBalance(userID)
-	return fmt.Sprintf("You have %.2f in your account", balance)
+	return m.Response{
+		Description: fmt.Sprintf("You have %.2f in your account", balance),
+	}
 }

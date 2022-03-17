@@ -12,9 +12,13 @@ import (
 )
 
 const (
+	// Currency
 	guildBalanceSortedKey = "guild:%s:balances"
 	userBalanceKey        = "user:%s:balance"
 	userGuildsKey         = "user:%s:guilds"
+
+	// Calendar
+	calendarKey = "guild:%s:channel:%s:calendar"
 )
 
 func OpenRedisClient(config *c.Config) m.DbClient {
@@ -103,4 +107,32 @@ func (r *RedisClient) GetBalancesFromGuild(guildID string) ([]*m.BalanceEntry, e
 	}
 
 	return balances, nil
+}
+
+func (r *RedisClient) AddCalendar(calendarID, channelID, guildID string) error {
+	ctx := context.Background()
+
+	key := fmt.Sprintf(calendarKey, guildID, channelID)
+	return r.client.SAdd(ctx, key, calendarID).Err()
+}
+
+func (r *RedisClient) GetCalendars(channelID, guildID string) ([]string, error) {
+	ctx := context.Background()
+
+	key := fmt.Sprintf(calendarKey, guildID, channelID)
+	return r.client.SMembers(ctx, key).Result()
+}
+
+func (r *RedisClient) HasCalendar(calendarID, channelID, guildID string) (bool, error) {
+	ctx := context.Background()
+
+	key := fmt.Sprintf(calendarKey, guildID, channelID)
+	return r.client.SIsMember(ctx, key, calendarID).Result()
+}
+
+func (r *RedisClient) RemoveCalendar(calendarID, channelID, guildID string) error {
+	ctx := context.Background()
+
+	key := fmt.Sprintf(calendarKey, guildID, channelID)
+	return r.client.SRem(ctx, key, calendarID).Err()
 }

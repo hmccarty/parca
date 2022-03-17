@@ -92,7 +92,6 @@ func (client *GoogleCalendarClient) GetCalendarData(calendarID string) (m.Calend
 }
 
 func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end time.Time) ([]m.CalendarEventData, error) {
-	fmt.Println("Starting events request")
 	if time.Now().After(client.expiration) {
 		token, expiration, err := requestToken(client.serviceEmail, client.keyData)
 		if err != nil {
@@ -113,7 +112,6 @@ func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end tim
 		return nil, err
 	}
 	defer resp.Body.Close()
-	fmt.Println("Sent request")
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -129,7 +127,6 @@ func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end tim
 		return nil, errors.New("calendar events not found")
 	}
 
-	fmt.Println("Starting to read in response data")
 	eventItemsRaw := calendarEventsDataRaw["items"].([]interface{})
 	var calendarEventsData []m.CalendarEventData
 	for _, v := range eventItemsRaw {

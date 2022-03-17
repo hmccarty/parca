@@ -79,11 +79,17 @@ func createDiscordHandler(command m.Command) DiscordHandler {
 			options[i] = option
 		}
 
-		content := command.Run(data, options)
+		resp := command.Run(data, options)
 		s.InteractionRespond(i.Interaction, &dg.InteractionResponse{
 			Type: dg.InteractionResponseChannelMessageWithSource,
 			Data: &dg.InteractionResponseData{
-				Content: content,
+				Embeds: []*dg.MessageEmbed{
+					{
+						Title:       resp.Title,
+						Description: resp.Description,
+						URL:         resp.URL,
+					},
+				},
 			},
 		})
 	}

@@ -39,16 +39,20 @@ func (*Pay) Options() []m.CommandOption {
 	}
 }
 
-func (command *Pay) Run(data m.CommandData, opts []m.CommandOption) string {
+func (command *Pay) Run(data m.CommandData, opts []m.CommandOption) m.Response {
 	if len(opts) != 2 {
-		return "Invalid number of options"
+		return m.Response{
+			Description: "Invalid number of options",
+		}
 	}
 
 	client := command.createDbClient()
 
 	var senderID string
 	if data.User == nil && data.Member == nil {
-		return "You must be logged in to use this command"
+		return m.Response{
+			Description: "You must be logged in to use this command",
+		}
 	} else if data.User != nil {
 		senderID = data.User.ID
 	} else {
@@ -58,23 +62,33 @@ func (command *Pay) Run(data m.CommandData, opts []m.CommandOption) string {
 	senderBalance, err := client.GetUserBalance(senderID)
 	amount := opts[1].Value.(float64)
 	if err != nil {
-		return fmt.Sprintf("Failed to get balance of <@%s>", senderID)
+		return m.Response{
+			Description: fmt.Sprintf("Failed to get balance of <@%s>", senderID),
+		}
 	} else if senderBalance < amount {
-		return fmt.Sprintf("Insufficient funds, you have %.2f coins and %.2f are required",
-			senderBalance, amount)
+		return m.Response{
+			Description: fmt.Sprintf("Insufficient funds, you have %.2f coins and %.2f are required",
+				senderBalance, amount),
+		}
 	}
 
 	receiverID := opts[0].Value.(string)
 	if senderID == receiverID {
-		return "You can't thank yourself"
+		return m.Response{
+			Description: "You can't thank yourself",
+		}
 	}
 
 	receiverBalance, err := client.GetUserBalance(receiverID)
 	if err != nil {
-		return fmt.Sprintf("Failed to get balance of <@%s>", receiverID)
+		return m.Response{
+			Description: fmt.Sprintf("Failed to get balance of <@%s>", receiverID),
+		}
 	}
 
 	client.SetUserBalance(senderID, data.GuildID, senderBalance-amount)
 	client.SetUserBalance(receiverID, data.GuildID, receiverBalance+amount)
-	return fmt.Sprintf("Paid <@%s> %.2f ARC coins", receiverID, amount)
+	return m.Response{
+		Description: fmt.Sprintf("Paid <@%s> %.2f ARC coins", receiverID, amount),
+	}
 }

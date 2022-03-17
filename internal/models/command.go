@@ -4,7 +4,7 @@ type Command interface {
 	Name() string
 	Description() string
 	Options() []CommandOption
-	Run(data CommandData, opts []CommandOption) string
+	Run(data CommandData, opts []CommandOption) Response
 }
 
 type CommandData struct {

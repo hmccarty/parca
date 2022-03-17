@@ -5,9 +5,16 @@ import (
 )
 
 type DbClient interface {
-	GetUserBalance(string) (float64, error)
-	SetUserBalance(string, string, float64) error
-	GetBalancesFromGuild(string) ([]*BalanceEntry, error)
+	// Currency
+	GetUserBalance(userid string) (float64, error)
+	SetUserBalance(userid, guildid string, amt float64) error
+	GetBalancesFromGuild(guildid string) ([]*BalanceEntry, error)
+
+	// Calendar
+	AddCalendar(calendarid, channelid, guildid string) error
+	GetCalendars(channelid, guildid string) ([]string, error)
+	HasCalendar(calendarid, channelid, guildid string) (bool, error)
+	RemoveCalendar(calendarid, channelid, guildid string) error
 }
 
 type OpenClient func(config *c.Config) (DbClient, error)

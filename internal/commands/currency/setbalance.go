@@ -39,9 +39,11 @@ func (*SetBalance) Options() []m.CommandOption {
 	}
 }
 
-func (command *SetBalance) Run(data m.CommandData, opts []m.CommandOption) string {
+func (command *SetBalance) Run(data m.CommandData, opts []m.CommandOption) m.Response {
 	if len(opts) != 2 {
-		return "Invalid number of options"
+		return m.Response{
+			Description: "Invalid number of options",
+		}
 	}
 
 	var userID string
@@ -58,5 +60,7 @@ func (command *SetBalance) Run(data m.CommandData, opts []m.CommandOption) strin
 	client := command.createDbClient()
 	client.SetUserBalance(userID, data.GuildID, amount)
 	balance, _ := client.GetUserBalance(userID)
-	return fmt.Sprintf("You have %.2f in your account", balance)
+	return m.Response{
+		Description: fmt.Sprintf("You have %.2f in your account", balance),
+	}
 }

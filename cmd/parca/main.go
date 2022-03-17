@@ -6,9 +6,9 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	"github.com/hmccarty/parca/internal/commands/currency"
+	calcmd "github.com/hmccarty/parca/internal/commands/calendar"
+	curcmd "github.com/hmccarty/parca/internal/commands/currency"
 	"github.com/hmccarty/parca/internal/models"
 	"github.com/hmccarty/parca/internal/services/calendar"
 	"github.com/hmccarty/parca/internal/services/config"
@@ -23,22 +23,25 @@ func main() {
 	}
 
 	calendarClient := calendar.NewGoogleCalendarClient(conf)
-	fmt.Println("Finished building client")
-	_, err = calendarClient.GetCalendarEvents("harrison.s.mccarty@gmail.com", time.Now().UTC().Add(5*time.Hour))
-	if err != nil {
-		fmt.Println(err)
-	}
 
 	createDbClient := func() models.DbClient {
 		return redis.OpenRedisClient(conf)
 	}
 
 	var commandList = []models.Command{
-		currency.NewBalanceCommand(createDbClient),
-		currency.NewSetBalanceCommand(createDbClient),
-		currency.NewLeaderboardCommand(createDbClient),
-		currency.NewThanksCommand(createDbClient),
-		currency.NewPayCommand(createDbClient),
+		// Currency Commands
+		curcmd.NewBalanceCommand(createDbClient),
+		curcmd.NewSetBalanceCommand(createDbClient),
+		curcmd.NewLeaderboardCommand(createDbClient),
+		curcmd.NewThanksCommand(createDbClient),
+		curcmd.NewPayCommand(createDbClient),
+
+		//Calendar Commands
+		calcmd.NewAddCalendarCommand(createDbClient, calendarClient),
+		calcmd.NewPrintCalendarCommand(createDbClient, calendarClient),
+		calcmd.NewRemoveCalendarCommand(createDbClient, calendarClient),
+		calcmd.NewTodayCommand(createDbClient, calendarClient),
+		calcmd.NewWeekCommand(createDbClient, calendarClient),
 	}
 
 	session, err := discord.NewDiscordSession(conf, commandList)

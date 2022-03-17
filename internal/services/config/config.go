@@ -10,7 +10,6 @@ type Config struct {
 	DiscordToken         string `yaml:"discord_token"`
 	DiscordAppID         string `yaml:"discord_app_id"`
 	DiscordGuildID       string `yaml:"discord_guild_id"`
-	GoogleClientID       string `yaml:"google_client_id"`
 	GoogleServiceEmail   string `yaml:"google_service_email"`
 	GooglePrivatePEMFile string `yaml:"google_private_pem_file"`
 }

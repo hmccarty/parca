@@ -28,11 +28,13 @@ func (*Leaderboard) Options() []m.CommandOption {
 	return []m.CommandOption{}
 }
 
-func (command *Leaderboard) Run(data m.CommandData, _ []m.CommandOption) string {
+func (command *Leaderboard) Run(data m.CommandData, _ []m.CommandOption) m.Response {
 	client := command.createDbClient()
 	balances, err := client.GetBalancesFromGuild(data.GuildID)
 	if err != nil {
-		return "Everybody is broke"
+		return m.Response{
+			Description: "Everybody is broke",
+		}
 	}
 
 	var msg string = ""
@@ -40,5 +42,8 @@ func (command *Leaderboard) Run(data m.CommandData, _ []m.CommandOption) string 
 		msg += fmt.Sprintf("%d. <@%s> has %.2f coins\n",
 			i+1, balance.UserID, balance.Balance)
 	}
-	return msg
+	return m.Response{
+		Title:       "Leaderboard",
+		Description: msg,
+	}
 }
