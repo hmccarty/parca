@@ -23,13 +23,32 @@ func setupEventHandlers(session *DiscordSession, events []m.Event) {
 					resp, err := event.Handle(eventData)
 					if err != nil {
 						fmt.Println(err)
+						return
+					} else if resp == nil {
+						return
 					}
-					s.ChannelMessageSendEmbed(i.Message.ChannelID,
-						&dg.MessageEmbed{
-							Title:       resp.Title,
-							Description: resp.Description,
-							URL:         resp.URL,
-						})
+
+					switch resp.Type {
+					case m.MessageResponse:
+						s.ChannelMessageSendEmbed(i.Message.ChannelID,
+							&dg.MessageEmbed{
+								Title:       resp.Title,
+								Description: resp.Description,
+								URL:         resp.URL,
+							})
+					case m.AddRoleResponse:
+						err := s.GuildMemberRoleAdd(resp.GuildID,
+							resp.UserID, resp.RoleID)
+						if err != nil {
+							fmt.Println(err)
+						}
+					case m.RemoveRoleResponse:
+						err := s.GuildMemberRoleRemove(resp.GuildID,
+							resp.UserID, resp.RoleID)
+						if err != nil {
+							fmt.Println(err)
+						}
+					}
 				},
 			)
 		}

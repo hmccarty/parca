@@ -2,7 +2,7 @@ package models
 
 type Event interface {
 	GetType() EventType
-	Handle(EventData) (Response, error)
+	Handle(EventData) (*Response, error)
 }
 
 type EventType uint8

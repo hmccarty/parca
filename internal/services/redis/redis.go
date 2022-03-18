@@ -1,6 +1,7 @@
 package redis
 
 import (
+	"errors"
 	"fmt"
 
 	"context"
@@ -21,8 +22,8 @@ const (
 	calendarKey = "guild:%s:channel:%s:calendar"
 
 	// Verification
-	verifyConfigKey = "guild:%s:verify"
-	verifyCodeKey   = "guild:%s:verify:user:%s"
+	verifyConfigKey = "verify:guild:%s"
+	verifyCodeKey   = "verify:user:%s"
 )
 
 func OpenRedisClient(config *c.Config) m.DbClient {
@@ -148,16 +149,36 @@ func (r *RedisClient) AddVerifyConfig(domain, roleID, guildID string) error {
 	return r.client.HSet(ctx, key, "domain", domain, "roleID", roleID).Err()
 }
 
+func (r *RedisClient) GetVerifyConfig(guildID string) (string, string, error) {
+	ctx := context.Background()
+
+	key := fmt.Sprintf(verifyConfigKey, guildID)
+	value, err := r.client.HMGet(ctx, key, "domain", "roleID").Result()
+	if err != nil {
+		return "", "", err
+	} else if len(value) != 2 {
+		return "", "", errors.New("failed to collect from redis")
+	}
+
+	return value[0].(string), value[1].(string), err
+}
+
 func (r *RedisClient) AddVerifyCode(code, userID, guildID string) error {
 	ctx := context.Background()
 
-	key := fmt.Sprintf(verifyCodeKey, guildID, userID)
-	return r.client.Set(ctx, key, code, 0).Err()
+	key := fmt.Sprintf(verifyCodeKey, userID)
+	return r.client.HSet(ctx, key, "code", code, "guildID", guildID).Err()
 }
 
-func (r *RedisClient) GetVerifyCode(userID, guildID string) (string, error) {
+func (r *RedisClient) GetVerifyCode(userID string) (string, string, error) {
 	ctx := context.Background()
 
-	key := fmt.Sprintf(verifyCodeKey, guildID, userID)
-	return r.client.Get(ctx, key).Result()
+	key := fmt.Sprintf(verifyCodeKey, userID)
+	value, err := r.client.HMGet(ctx, key, "code", "guildID").Result()
+	if err != nil {
+		return "", "", err
+	} else if len(value) != 2 {
+		return "", "", errors.New("failed to collect from redis")
+	}
+	return value[0].(string), value[1].(string), err
 }

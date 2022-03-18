@@ -18,7 +18,24 @@ func (*VerifyOnMessageEvent) GetType() m.EventType {
 	return m.OnMessageCreate
 }
 
-func (event *VerifyOnMessageEvent) Handle(data m.EventData) (m.Response, error) {
+func (event *VerifyOnMessageEvent) Handle(data m.EventData) (*m.Response, error) {
+	client := event.createDbClient()
+	code, guildID, _ := client.GetVerifyCode(data.Message.Author.ID)
 
-	return m.Response{}, nil
+	if code == "" {
+		return nil, nil
+	} else if data.Message.Content != code {
+		return &m.Response{
+			Description: "Invalid code",
+		}, nil
+	}
+
+	_, roleID, _ := client.GetVerifyConfig(guildID)
+
+	return &m.Response{
+		Type:    m.AddRoleResponse,
+		GuildID: guildID,
+		UserID:  data.Message.Author.ID,
+		RoleID:  roleID,
+	}, nil
 }

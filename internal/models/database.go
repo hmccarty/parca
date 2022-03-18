@@ -18,8 +18,9 @@ type DbClient interface {
 
 	// Verification
 	AddVerifyConfig(domain, roleID, guildID string) error
+	GetVerifyConfig(guildID string) (string, string, error)
 	AddVerifyCode(code, userID, guildID string) error
-	GetVerifyCode(userID, guildID string) (string, error)
+	GetVerifyCode(userID string) (string, string, error)
 }
 
 type OpenClient func(config *c.Config) (DbClient, error)
