@@ -19,6 +19,10 @@ const (
 
 	// Calendar
 	calendarKey = "guild:%s:channel:%s:calendar"
+
+	// Verification
+	verifyConfigKey = "guild:%s:verify"
+	verifyCodeKey   = "guild:%s:verify:user:%s"
 )
 
 func OpenRedisClient(config *c.Config) m.DbClient {
@@ -135,4 +139,25 @@ func (r *RedisClient) RemoveCalendar(calendarID, channelID, guildID string) erro
 
 	key := fmt.Sprintf(calendarKey, guildID, channelID)
 	return r.client.SRem(ctx, key, calendarID).Err()
+}
+
+func (r *RedisClient) AddVerifyConfig(domain, roleID, guildID string) error {
+	ctx := context.Background()
+
+	key := fmt.Sprintf(verifyConfigKey, guildID)
+	return r.client.HSet(ctx, key, "domain", domain, "roleID", roleID).Err()
+}
+
+func (r *RedisClient) AddVerifyCode(code, userID, guildID string) error {
+	ctx := context.Background()
+
+	key := fmt.Sprintf(verifyCodeKey, guildID, userID)
+	return r.client.Set(ctx, key, code, 0).Err()
+}
+
+func (r *RedisClient) GetVerifyCode(userID, guildID string) (string, error) {
+	ctx := context.Background()
+
+	key := fmt.Sprintf(verifyCodeKey, guildID, userID)
+	return r.client.Get(ctx, key).Result()
 }

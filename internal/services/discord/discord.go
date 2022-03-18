@@ -8,55 +8,59 @@ import (
 	c "github.com/hmccarty/parca/internal/services/config"
 )
 
-type DiscordHandler func(*dg.Session, *dg.InteractionCreate)
-
-type DiscordSession struct {
-	Session            *dg.Session
-	registeredCommands []*dg.ApplicationCommand
-}
-
-func NewDiscordSession(config *c.Config, commands []m.Command) (*DiscordSession, error) {
+func NewDiscordSession(config *c.Config, commands []m.Command, events []m.Event) (*DiscordSession, error) {
 	discordSession := new(DiscordSession)
 
+	// CSetup Discord service to use API key
 	session, err := dg.New(config.DiscordToken)
 	if err != nil {
 		return nil, err
 	}
 	discordSession.Session = session
 
-	discordCommands := make([]*dg.ApplicationCommand, len(commands))
-	discordHandlers := map[string]DiscordHandler{}
+	// Setup commands as applications and assign their handlers
+	applications := make([]*dg.ApplicationCommand, len(commands))
+	commandHandlers := map[string]CommandHandler{}
 	for i, v := range commands {
-		discordCommands[i] = appFromCommand(v)
-		discordHandlers[v.Name()] = createDiscordHandler(v)
+		applications[i] = appFromCommand(v)
+		commandHandlers[v.Name()] = handlerFromCommand(v)
 	}
 
 	discordSession.Session.AddHandler(func(s *dg.Session, i *dg.InteractionCreate) {
-		if h, ok := discordHandlers[i.ApplicationCommandData().Name]; ok {
+		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
 			h(s, i)
 		}
 	})
 
+	setupEventHandlers(discordSession, events)
+
+	// Open connection to Discord service
 	err = session.Open()
 	if err != nil {
 		log.Fatalf("Cannot open the session: %v", err)
 	}
 
-	discordSession.registeredCommands = make([]*dg.ApplicationCommand, len(commands))
-	for i, v := range discordCommands {
+	// Post applications to Discord
+	discordSession.registeredApplications = make([]*dg.ApplicationCommand, len(commands))
+	for i, v := range applications {
 		cmd, err := discordSession.Session.ApplicationCommandCreate(
 			config.DiscordAppID, config.DiscordGuildID, v)
 		if err != nil {
 			log.Panicf("cannot create '%v' command: %v", v.Name, err)
 		}
-		discordSession.registeredCommands[i] = cmd
+		discordSession.registeredApplications[i] = cmd
 	}
 
 	return discordSession, nil
 }
 
+type DiscordSession struct {
+	Session                *dg.Session
+	registeredApplications []*dg.ApplicationCommand
+}
+
 func (d *DiscordSession) Close() {
-	for _, v := range d.registeredCommands {
+	for _, v := range d.registeredApplications {
 		err := d.Session.ApplicationCommandDelete(d.Session.State.User.ID, "", v.ID)
 		if err != nil {
 			log.Panicf("cannot delete '%v' command: %v", v.Name, err)
@@ -64,33 +68,4 @@ func (d *DiscordSession) Close() {
 	}
 
 	d.Session.Close()
-}
-
-func createDiscordHandler(command m.Command) DiscordHandler {
-	return func(s *dg.Session, i *dg.InteractionCreate) {
-		data, _ := dataFromInteraction(i.Interaction)
-		appData := i.ApplicationCommandData()
-		options := make([]m.CommandOption, len(appData.Options))
-		for i, v := range appData.Options {
-			option, err := optionFromInteraction(v)
-			if err != nil {
-				log.Println(err)
-			}
-			options[i] = option
-		}
-
-		resp := command.Run(data, options)
-		s.InteractionRespond(i.Interaction, &dg.InteractionResponse{
-			Type: dg.InteractionResponseChannelMessageWithSource,
-			Data: &dg.InteractionResponseData{
-				Embeds: []*dg.MessageEmbed{
-					{
-						Title:       resp.Title,
-						Description: resp.Description,
-						URL:         resp.URL,
-					},
-				},
-			},
-		})
-	}
 }

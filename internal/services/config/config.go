@@ -7,11 +7,20 @@ import (
 )
 
 type Config struct {
-	DiscordToken         string `yaml:"discord_token"`
-	DiscordAppID         string `yaml:"discord_app_id"`
-	DiscordGuildID       string `yaml:"discord_guild_id"`
+	// Discord
+	DiscordToken   string `yaml:"discord_token"`
+	DiscordAppID   string `yaml:"discord_app_id"`
+	DiscordGuildID string `yaml:"discord_guild_id"`
+
+	// Google Calendar
 	GoogleServiceEmail   string `yaml:"google_service_email"`
 	GooglePrivatePEMFile string `yaml:"google_private_pem_file"`
+
+	// SMTP
+	SMTPEmail    string `yaml:"smtp_email"`
+	SMTPPassword string `yaml:"smtp_password"`
+	SMTPServer   string `yaml:"smtp_server"`
+	SMTPPort     string `yaml:"smtp_port"`
 }
 
 func NewConfig(filename string) (*Config, error) {

@@ -31,7 +31,7 @@ General:
 
 Domain verification:
 
-- configuredomain ( )
+- configuredomain (X)
 - verify ( )
 
 Games:

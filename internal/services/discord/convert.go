@@ -5,27 +5,6 @@ import (
 	m "github.com/hmccarty/parca/internal/models"
 )
 
-func appFromCommand(command m.Command) *dg.ApplicationCommand {
-	var appOptions []*dg.ApplicationCommandOption = nil
-	if len(command.Options()) > 0 {
-		appOptions = make([]*dg.ApplicationCommandOption, len(command.Options()))
-		for i, v := range command.Options() {
-			appOptions[i] = &dg.ApplicationCommandOption{
-				Type:        dg.ApplicationCommandOptionType(v.Type),
-				Name:        v.Name,
-				Required:    v.Required,
-				Description: "Description",
-			}
-		}
-	}
-
-	return &dg.ApplicationCommand{
-		Name:        command.Name(),
-		Description: command.Description(),
-		Options:     appOptions,
-	}
-}
-
 func optionFromInteraction(interactionOption *dg.ApplicationCommandInteractionDataOption) (m.CommandOption, error) {
 	option := m.CommandOption{
 		Name:  interactionOption.Name,
@@ -33,6 +12,21 @@ func optionFromInteraction(interactionOption *dg.ApplicationCommandInteractionDa
 		Value: interactionOption.Value,
 	}
 	return option, nil
+}
+
+func messageFromData(message *dg.Message) *m.Message {
+	if message == nil {
+		return nil
+	}
+	return &m.Message{
+		ID:        message.ID,
+		ChannelID: message.ChannelID,
+		GuildID:   message.GuildID,
+		Content:   message.Content,
+		Timestamp: message.Timestamp,
+		Author:    userFromData(message.Author),
+		Member:    memberFromData(message.Member),
+	}
 }
 
 func userFromData(user *dg.User) *m.User {

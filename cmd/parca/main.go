@@ -9,11 +9,14 @@ import (
 
 	calcmd "github.com/hmccarty/parca/internal/commands/calendar"
 	curcmd "github.com/hmccarty/parca/internal/commands/currency"
+	vercmd "github.com/hmccarty/parca/internal/commands/verify"
+	"github.com/hmccarty/parca/internal/events"
 	"github.com/hmccarty/parca/internal/models"
 	"github.com/hmccarty/parca/internal/services/calendar"
 	"github.com/hmccarty/parca/internal/services/config"
 	"github.com/hmccarty/parca/internal/services/discord"
 	"github.com/hmccarty/parca/internal/services/redis"
+	"github.com/hmccarty/parca/internal/services/smtp"
 )
 
 func main() {
@@ -23,6 +26,10 @@ func main() {
 	}
 
 	calendarClient := calendar.NewGoogleCalendarClient(conf)
+	smtpClient, err := smtp.NewSMTPClient(conf)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	createDbClient := func() models.DbClient {
 		return redis.OpenRedisClient(conf)
@@ -36,15 +43,23 @@ func main() {
 		curcmd.NewThanksCommand(createDbClient),
 		curcmd.NewPayCommand(createDbClient),
 
-		//Calendar Commands
+		// Calendar Commands
 		calcmd.NewAddCalendarCommand(createDbClient, calendarClient),
 		calcmd.NewPrintCalendarCommand(createDbClient, calendarClient),
 		calcmd.NewRemoveCalendarCommand(createDbClient, calendarClient),
 		calcmd.NewTodayCommand(createDbClient, calendarClient),
 		calcmd.NewWeekCommand(createDbClient, calendarClient),
+
+		// Verification Commands
+		vercmd.NewConfigureVerifyCommand(createDbClient),
+		vercmd.NewVerifyCommand(createDbClient, smtpClient),
 	}
 
-	session, err := discord.NewDiscordSession(conf, commandList)
+	var eventList = []models.Event{
+		events.NewVerifyOnMessageEvent(createDbClient),
+	}
+
+	session, err := discord.NewDiscordSession(conf, commandList, eventList)
 	if err != nil {
 		log.Fatal(err)
 	}

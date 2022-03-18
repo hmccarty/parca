@@ -37,20 +37,3 @@ type CommandOption struct {
 	Value    interface{}
 	Options  []*CommandOption
 }
-
-type User struct {
-	ID       string
-	Email    string
-	Username string
-}
-
-type Member struct {
-	GuildID string
-	User    *User
-	Roles   []string
-}
-
-type Role struct {
-	ID   string
-	Name string
-}

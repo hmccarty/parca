@@ -6,15 +6,20 @@ import (
 
 type DbClient interface {
 	// Currency
-	GetUserBalance(userid string) (float64, error)
-	SetUserBalance(userid, guildid string, amt float64) error
-	GetBalancesFromGuild(guildid string) ([]*BalanceEntry, error)
+	GetUserBalance(userID string) (float64, error)
+	SetUserBalance(userID, guildID string, amt float64) error
+	GetBalancesFromGuild(guildID string) ([]*BalanceEntry, error)
 
 	// Calendar
-	AddCalendar(calendarid, channelid, guildid string) error
-	GetCalendars(channelid, guildid string) ([]string, error)
-	HasCalendar(calendarid, channelid, guildid string) (bool, error)
-	RemoveCalendar(calendarid, channelid, guildid string) error
+	AddCalendar(calendarID, channelID, guildID string) error
+	GetCalendars(channelID, guildID string) ([]string, error)
+	HasCalendar(calendarID, channelID, guildID string) (bool, error)
+	RemoveCalendar(calendarID, channelID, guildID string) error
+
+	// Verification
+	AddVerifyConfig(domain, roleID, guildID string) error
+	AddVerifyCode(code, userID, guildID string) error
+	GetVerifyCode(userID, guildID string) (string, error)
 }
 
 type OpenClient func(config *c.Config) (DbClient, error)
