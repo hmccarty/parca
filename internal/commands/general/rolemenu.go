@@ -11,14 +11,10 @@ const (
 	roleReactData = "rolemenu-%s"
 )
 
-type RoleMenu struct {
-	createDbClient func() m.DbClient
-}
+type RoleMenu struct{}
 
-func NewRoleMenuCommand(createDbClient func() m.DbClient) m.Command {
-	return &RoleMenu{
-		createDbClient: createDbClient,
-	}
+func NewRoleMenuCommand() m.Command {
+	return &RoleMenu{}
 }
 
 func (*RoleMenu) Name() string {
@@ -77,7 +73,7 @@ func (command *RoleMenu) Run(data m.CommandData, opts []m.CommandOption) m.Respo
 	for i, v := range opts[1:] {
 		role := v.Value.(m.Role)
 		buttons[i] = m.ResponseButton{
-			Style:     m.EmojiButtonStyle,
+			Style:     m.PrimaryButtonStyle,
 			Label:     role.Name,
 			ReactData: fmt.Sprintf(roleReactData, role.ID),
 		}

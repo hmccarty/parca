@@ -33,7 +33,9 @@ func main() {
 
 	var commandList = []models.Command{
 		// General Commands
-		gencmd.NewRoleMenuCommand(createDbClient),
+		gencmd.NewStatusCommand(),
+		gencmd.NewRoleMenuCommand(),
+		gencmd.NewPollCommand(createDbClient),
 
 		// // Currency Commands
 		// curcmd.NewBalanceCommand(createDbClient),

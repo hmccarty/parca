@@ -42,6 +42,20 @@ func optionFromInteraction(s *dg.Session, guildID string, interactionOption *dg.
 	}, nil
 }
 
+func componentEmojiFromEmoji(emoji m.Emoji) dg.ComponentEmoji {
+	switch emoji {
+	case m.ThumbsUpEmoji:
+		return dg.ComponentEmoji{
+			Name: "👍",
+		}
+	case m.ThumbsDownEmoji:
+		return dg.ComponentEmoji{
+			Name: "👎",
+		}
+	}
+	return dg.ComponentEmoji{}
+}
+
 func componentsFromResponse(resp m.Response) ([]dg.MessageComponent, error) {
 	if resp.Buttons == nil {
 		return nil, nil
@@ -54,8 +68,10 @@ func componentsFromResponse(resp m.Response) ([]dg.MessageComponent, error) {
 	for _, button := range resp.Buttons {
 		var style dg.ButtonStyle
 		switch button.Style {
-		case m.EmojiButtonStyle:
+		case m.PrimaryButtonStyle:
 			style = dg.PrimaryButton
+		case m.SecondaryButtonStyle:
+			style = dg.DangerButton
 		case m.LinkButtonStyle:
 			style = dg.LinkButton
 		default:
@@ -65,6 +81,7 @@ func componentsFromResponse(resp m.Response) ([]dg.MessageComponent, error) {
 		actionRow.Components = append(actionRow.Components,
 			dg.Button{
 				Label:    button.Label,
+				Emoji:    componentEmojiFromEmoji(button.Emoji),
 				Style:    style,
 				URL:      button.URL,
 				CustomID: button.ReactData,

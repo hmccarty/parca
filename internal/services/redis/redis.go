@@ -24,6 +24,12 @@ const (
 	// Verification
 	verifyConfigKey = "verify:guild:%s"
 	verifyCodeKey   = "verify:user:%s"
+
+	// General
+	pollTitleKey   = "poll:%s:title"
+	pollYesVoteKey = "poll:%s:yes"
+	pollNoVoteKey  = "poll:%s:no"
+	pollVotersKey  = "poll:%s:voters"
 )
 
 func OpenRedisClient(config *c.Config) m.DbClient {
@@ -181,4 +187,85 @@ func (r *RedisClient) GetVerifyCode(userID string) (string, string, error) {
 		return "", "", errors.New("failed to collect from redis")
 	}
 	return value[0].(string), value[1].(string), err
+}
+
+func (r *RedisClient) CreatePoll(pollTitle, pollID string) error {
+	ctx := context.Background()
+
+	titleKey := fmt.Sprintf(pollTitleKey, pollID)
+	_, err := r.client.Get(ctx, titleKey).Result()
+	if err == nil {
+		return m.ErrorPollIDAlreadyExists
+	}
+	r.client.Set(ctx, titleKey, pollTitle, 0)
+
+	yesKey := fmt.Sprintf(pollYesVoteKey, pollID)
+	err = r.client.Set(ctx, yesKey, 0, 0).Err()
+	if err != nil {
+		return err
+	}
+
+	noKey := fmt.Sprintf(pollNoVoteKey, pollID)
+	err = r.client.Set(ctx, noKey, 0, 0).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *RedisClient) GetPollTitle(pollID string) (string, error) {
+	ctx := context.Background()
+
+	titleKey := fmt.Sprintf(pollTitleKey, pollID)
+	return r.client.Get(ctx, titleKey).Result()
+}
+
+func (r *RedisClient) AddPollVote(vote bool, pollID, userID string) error {
+	ctx := context.Background()
+
+	voterKey := fmt.Sprintf(pollVotersKey, pollID)
+	hasVoted, err := r.client.SIsMember(ctx, voterKey, userID).Result()
+	if hasVoted == true {
+		return m.ErrorUserAlreadyVoted
+	} else if err != nil {
+		return err
+	}
+
+	var key string
+	if vote {
+		key = fmt.Sprintf(pollYesVoteKey, pollID)
+	} else {
+		key = fmt.Sprintf(pollNoVoteKey, pollID)
+	}
+
+	cnt, err := r.client.Get(ctx, key).Int()
+	if err != nil {
+		return m.ErrorPollIDDoesntExists
+	}
+
+	err = r.client.Set(ctx, key, cnt+1, 0).Err()
+	if err != nil {
+		return err
+	}
+
+	return r.client.SAdd(ctx, voterKey, userID).Err()
+}
+
+func (r *RedisClient) GetPollVote(pollID string) (int, int, error) {
+	ctx := context.Background()
+
+	yesKey := fmt.Sprintf(pollYesVoteKey, pollID)
+	yesCnt, err := r.client.Get(ctx, yesKey).Int()
+	if err != nil {
+		return 0, 0, m.ErrorPollIDDoesntExists
+	}
+
+	noKey := fmt.Sprintf(pollNoVoteKey, pollID)
+	noCnt, err := r.client.Get(ctx, noKey).Int()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return yesCnt, noCnt, nil
 }

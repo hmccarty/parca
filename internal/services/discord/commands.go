@@ -117,6 +117,24 @@ func reactionHandlerFromCommand(command m.Command) ReactionHandler {
 					Flags:   uint64(dg.MessageFlagsEphemeral),
 				},
 			})
+		case m.MessageEditResponse:
+			err := s.InteractionRespond(i.Interaction, &dg.InteractionResponse{
+				Type: dg.InteractionResponseUpdateMessage,
+				Data: &dg.InteractionResponseData{
+					Embeds: []*dg.MessageEmbed{
+						{
+							Title:       resp.Title,
+							Description: resp.Description,
+							URL:         resp.URL,
+						},
+					},
+
+					Components: comp,
+				},
+			})
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }

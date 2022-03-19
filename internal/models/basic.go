@@ -28,3 +28,10 @@ type Role struct {
 	ID   string
 	Name string
 }
+
+type Emoji uint8
+
+const (
+	ThumbsUpEmoji   Emoji = 1
+	ThumbsDownEmoji Emoji = 2
+)

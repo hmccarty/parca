@@ -23,8 +23,8 @@ Calendar:
 
 General:
 
-- status ( )
-- poll ( )
+- status (X)
+- poll (X)
 - 8ball ( )
 - create_role_menu (X)
 - remind ( )

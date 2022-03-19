@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+
 	c "github.com/hmccarty/parca/internal/services/config"
 )
 
@@ -21,6 +23,12 @@ type DbClient interface {
 	GetVerifyConfig(guildID string) (string, string, error)
 	AddVerifyCode(code, userID, guildID string) error
 	GetVerifyCode(userID string) (string, string, error)
+
+	// General
+	CreatePoll(pollTitle, pollID string) error
+	GetPollTitle(pollID string) (string, error)
+	AddPollVote(vote bool, pollID, userID string) error
+	GetPollVote(pollID string) (int, int, error)
 }
 
 type OpenClient func(config *c.Config) (DbClient, error)
@@ -29,3 +37,9 @@ type BalanceEntry struct {
 	UserID  string
 	Balance float64
 }
+
+var (
+	ErrorPollIDAlreadyExists = errors.New("poll already exists with id")
+	ErrorPollIDDoesntExists  = errors.New("no poll with id")
+	ErrorUserAlreadyVoted    = errors.New("user already voted in poll")
+)

@@ -19,15 +19,18 @@ type Response struct {
 type ResponseType uint8
 
 const (
-	MessageResponse    ResponseType = 1
-	AddRoleResponse    ResponseType = 2
-	RemoveRoleResponse ResponseType = 3
+	MessageResponse         ResponseType = 1
+	AddRoleResponse         ResponseType = 2
+	RemoveRoleResponse      ResponseType = 3
+	MessageEditResponse     ResponseType = 4
+	ScheduleMessageResponse ResponseType = 5
+	ScheduleCommandCall     ResponseType = 6
 )
 
 type ResponseButton struct {
 	Style     ResponseButtonStyle
 	Label     string
-	Emoji     string
+	Emoji     Emoji
 	ReactData string
 	URL       string
 }
@@ -35,6 +38,7 @@ type ResponseButton struct {
 type ResponseButtonStyle uint8
 
 const (
-	EmojiButtonStyle ResponseButtonStyle = 1
-	LinkButtonStyle  ResponseButtonStyle = 2
+	PrimaryButtonStyle   ResponseButtonStyle = 1
+	SecondaryButtonStyle ResponseButtonStyle = 2
+	LinkButtonStyle      ResponseButtonStyle = 3
 )
