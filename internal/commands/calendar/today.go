@@ -67,3 +67,9 @@ func (command *Today) Run(data m.CommandData, _ []m.CommandOption) m.Response {
 		Description: desc,
 	}
 }
+
+func (*Today) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

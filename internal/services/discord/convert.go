@@ -1,17 +1,77 @@
 package discord
 
 import (
+	"errors"
+
 	dg "github.com/bwmarrin/discordgo"
 	m "github.com/hmccarty/parca/internal/models"
 )
 
-func optionFromInteraction(interactionOption *dg.ApplicationCommandInteractionDataOption) (m.CommandOption, error) {
-	option := m.CommandOption{
-		Name:  interactionOption.Name,
-		Type:  m.CommandOptionType(interactionOption.Type),
-		Value: interactionOption.Value,
+func optionFromInteraction(s *dg.Session, guildID string, interactionOption *dg.ApplicationCommandInteractionDataOption) (m.CommandOption, error) {
+	optionType := m.CommandOptionType(interactionOption.Type)
+
+	var optionValue interface{}
+	switch optionType {
+	case m.UserOption:
+		user := interactionOption.UserValue(s)
+		if user == nil {
+			return m.CommandOption{}, errors.New("User not found")
+		}
+		optionValue = m.User{
+			ID:       user.ID,
+			Email:    user.Email,
+			Username: user.Username,
+		}
+	case m.RoleOption:
+		role := interactionOption.RoleValue(s, guildID)
+		if role == nil {
+			return m.CommandOption{}, errors.New("Role not found")
+		}
+		optionValue = m.Role{
+			ID:   role.ID,
+			Name: role.Name,
+		}
+	default:
+		optionValue = interactionOption.Value
 	}
-	return option, nil
+
+	return m.CommandOption{
+		Name:  interactionOption.Name,
+		Type:  optionType,
+		Value: optionValue,
+	}, nil
+}
+
+func componentsFromResponse(resp m.Response) ([]dg.MessageComponent, error) {
+	if resp.Buttons == nil {
+		return nil, nil
+	}
+
+	actionRow := &dg.ActionsRow{
+		Components: []dg.MessageComponent{},
+	}
+
+	for _, button := range resp.Buttons {
+		var style dg.ButtonStyle
+		switch button.Style {
+		case m.EmojiButtonStyle:
+			style = dg.PrimaryButton
+		case m.LinkButtonStyle:
+			style = dg.LinkButton
+		default:
+			style = dg.SecondaryButton
+		}
+
+		actionRow.Components = append(actionRow.Components,
+			dg.Button{
+				Label:    button.Label,
+				Style:    style,
+				URL:      button.URL,
+				CustomID: button.ReactData,
+			})
+	}
+
+	return []dg.MessageComponent{actionRow}, nil
 }
 
 func messageFromData(message *dg.Message) *m.Message {

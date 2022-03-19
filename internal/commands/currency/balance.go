@@ -54,3 +54,9 @@ func (command *Balance) Run(data m.CommandData, opts []m.CommandOption) m.Respon
 		Description: fmt.Sprintf("You have %.2f in your account", balance),
 	}
 }
+
+func (*Balance) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

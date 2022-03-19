@@ -47,3 +47,9 @@ func (command *Leaderboard) Run(data m.CommandData, _ []m.CommandOption) m.Respo
 		Description: msg,
 	}
 }
+
+func (*Leaderboard) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

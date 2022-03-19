@@ -10,6 +10,7 @@ type Response struct {
 	URL         string
 	Title       string
 	Description string
+	Buttons     []ResponseButton
 
 	// Role responses
 	RoleID string
@@ -21,4 +22,19 @@ const (
 	MessageResponse    ResponseType = 1
 	AddRoleResponse    ResponseType = 2
 	RemoveRoleResponse ResponseType = 3
+)
+
+type ResponseButton struct {
+	Style     ResponseButtonStyle
+	Label     string
+	Emoji     string
+	ReactData string
+	URL       string
+}
+
+type ResponseButtonStyle uint8
+
+const (
+	EmojiButtonStyle ResponseButtonStyle = 1
+	LinkButtonStyle  ResponseButtonStyle = 2
 )

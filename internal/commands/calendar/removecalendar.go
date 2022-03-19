@@ -65,3 +65,9 @@ func (command *RemoveCalendar) Run(data m.CommandData, opts []m.CommandOption) m
 		Description: "Removed calendar from channel",
 	}
 }
+
+func (*RemoveCalendar) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

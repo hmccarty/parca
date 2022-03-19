@@ -64,3 +64,9 @@ func (command *AddCalendar) Run(data m.CommandData, opts []m.CommandOption) m.Re
 			calendarData.Name),
 	}
 }
+
+func (*AddCalendar) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

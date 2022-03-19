@@ -5,6 +5,7 @@ type Command interface {
 	Description() string
 	Options() []CommandOption
 	Run(data CommandData, opts []CommandOption) Response
+	HandleReaction(data CommandData, reaction string) Response
 }
 
 type CommandData struct {
@@ -31,9 +32,9 @@ const (
 )
 
 type CommandOption struct {
-	Name     string
-	Type     CommandOptionType
-	Required bool
-	Value    interface{}
-	Options  []*CommandOption
+	Name        string
+	Description string
+	Type        CommandOptionType
+	Required    bool
+	Value       interface{}
 }

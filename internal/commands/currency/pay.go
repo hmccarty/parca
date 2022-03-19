@@ -92,3 +92,9 @@ func (command *Pay) Run(data m.CommandData, opts []m.CommandOption) m.Response {
 		Description: fmt.Sprintf("Paid <@%s> %.2f ARC coins", receiverID, amount),
 	}
 }
+
+func (*Pay) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

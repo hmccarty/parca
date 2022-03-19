@@ -58,3 +58,9 @@ func (command *PrintCalendar) Run(data m.CommandData, _ []m.CommandOption) m.Res
 		Description: desc,
 	}
 }
+
+func (*PrintCalendar) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

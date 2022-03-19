@@ -26,13 +26,13 @@ General:
 - status ( )
 - poll ( )
 - 8ball ( )
-- create_role_menu ( )
+- create_role_menu (X)
 - remind ( )
 
 Domain verification:
 
 - configuredomain (X)
-- verify ( )
+- verify ( ) -
 
 Games:
 

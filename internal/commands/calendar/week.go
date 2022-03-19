@@ -67,3 +67,9 @@ func (command *Week) Run(data m.CommandData, _ []m.CommandOption) m.Response {
 		Description: desc,
 	}
 }
+
+func (*Week) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

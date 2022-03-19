@@ -68,3 +68,9 @@ func (command *Verify) Run(data m.CommandData, opts []m.CommandOption) m.Respons
 		Description: "Check your email for code and respond in DMs",
 	}
 }
+
+func (*Verify) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

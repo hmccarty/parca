@@ -91,3 +91,9 @@ func (command *Thanks) Run(data m.CommandData, opts []m.CommandOption) m.Respons
 		Description: fmt.Sprintf("Sent <@%s> %.2f ARC coins", receiverID, amount),
 	}
 }
+
+func (*Thanks) HandleReaction(data m.CommandData, reaction string) m.Response {
+	return m.Response{
+		Description: "Not expecting a reaction",
+	}
+}

@@ -9,6 +9,7 @@ type EventType uint8
 
 const (
 	OnMessageCreate EventType = 1
+	OnButtonPress   EventType = 1
 )
 
 type EventData struct {

@@ -2,6 +2,7 @@ package discord
 
 import (
 	"log"
+	"strings"
 
 	dg "github.com/bwmarrin/discordgo"
 	m "github.com/hmccarty/parca/internal/models"
@@ -21,14 +22,24 @@ func NewDiscordSession(config *c.Config, commands []m.Command, events []m.Event)
 	// Setup commands as applications and assign their handlers
 	applications := make([]*dg.ApplicationCommand, len(commands))
 	commandHandlers := map[string]CommandHandler{}
+	reactionHandlers := map[string]ReactionHandler{}
 	for i, v := range commands {
 		applications[i] = appFromCommand(v)
 		commandHandlers[v.Name()] = handlerFromCommand(v)
+		reactionHandlers[v.Name()] = reactionHandlerFromCommand(v)
 	}
 
 	discordSession.Session.AddHandler(func(s *dg.Session, i *dg.InteractionCreate) {
-		if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
-			h(s, i)
+		switch i.Type {
+		case dg.InteractionApplicationCommand:
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
+		case dg.InteractionMessageComponent:
+			key := strings.Split(i.MessageComponentData().CustomID, "-")[0]
+			if h, ok := reactionHandlers[key]; ok {
+				h(s, i)
+			}
 		}
 	})
 
