@@ -8,9 +8,6 @@ import (
 	m "github.com/hmccarty/parca/internal/models"
 )
 
-type CommandHandler func(*dg.Session, *dg.InteractionCreate)
-type ReactionHandler func(*dg.Session, *dg.InteractionCreate)
-
 func appFromCommand(command m.Command) *dg.ApplicationCommand {
 	var appOptions []*dg.ApplicationCommandOption = nil
 	if len(command.Options()) > 0 {

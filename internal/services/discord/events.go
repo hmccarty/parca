@@ -7,18 +7,18 @@ import (
 	m "github.com/hmccarty/parca/internal/models"
 )
 
-func setupEventHandlers(session *DiscordSession, events []m.Event) {
+func setupEventHandlers(client *DiscordClient, events []m.Event) {
 	for _, event := range events {
 		switch event.GetType() {
 		case m.OnMessageCreate:
-			session.Session.AddHandler(
-				func(s *dg.Session, i *dg.MessageCreate) {
-					if i.Author.ID == s.State.User.ID {
+			client.Session.AddHandler(
+				func(s *dg.Session, e *dg.MessageCreate) {
+					if e.Author.ID == s.State.User.ID {
 						return
 					}
 
 					eventData := m.EventData{
-						Message: messageFromData(i.Message),
+						Message: messageFromData(e.Message),
 					}
 					resp, err := event.Handle(eventData)
 					if err != nil {
@@ -30,7 +30,7 @@ func setupEventHandlers(session *DiscordSession, events []m.Event) {
 
 					switch resp.Type {
 					case m.MessageResponse:
-						s.ChannelMessageSendEmbed(i.Message.ChannelID,
+						s.ChannelMessageSendEmbed(e.Message.ChannelID,
 							&dg.MessageEmbed{
 								Title:       resp.Title,
 								Description: resp.Description,

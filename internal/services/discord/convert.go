@@ -138,12 +138,11 @@ func roleFromData(role *dg.Role) *m.Role {
 	}
 }
 
-func dataFromInteraction(interaction *dg.Interaction) (m.CommandData, error) {
-	data := m.CommandData{
-		GuildID:   interaction.GuildID,
-		ChannelID: interaction.ChannelID,
-		User:      userFromData(interaction.User),
-		Member:    memberFromData(interaction.Member),
+func cmdDataFromInteract(interact *dg.Interaction) m.CommandData {
+	return m.CommandData{
+		GuildID:   interact.GuildID,
+		ChannelID: interact.ChannelID,
+		User:      userFromData(interact.User),
+		Member:    memberFromData(interact.Member),
 	}
-	return data, nil
 }
