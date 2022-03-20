@@ -37,25 +37,22 @@ func getInteractHandler(cmds []m.Command) InteractHandler {
 
 func getAppInteractHandler(cmd m.Command) InteractHandler {
 	return func(s *dg.Session, i *dg.InteractionCreate) {
-		interactData, err := dataFromInteraction(i.Interaction)
-		if err != nil {
-
-		}
-
+		cmdData := cmdDataFromInteract(i.Interaction)
 		appData := i.ApplicationCommandData()
 		options := make([]m.CommandOption, len(appData.Options))
 		for i, v := range appData.Options {
-			option, err := optionFromInteraction(s, data.GuildID, v)
+			option, err := optFromInteract(s, cmdData.GuildID, v)
 			if err != nil {
 				log.Println(err)
 			}
 			options[i] = option
 		}
 
-		resp := cmd.Run(data, options)
+		resp := cmd.Run(cmdData, options)
 		comp, err := componentsFromResponse(resp)
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 
 		switch resp.Type {

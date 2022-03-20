@@ -7,42 +7,42 @@ import (
 	m "github.com/hmccarty/parca/internal/models"
 )
 
-func optionFromInteraction(s *dg.Session, guildID string, interactionOption *dg.ApplicationCommandInteractionDataOption) (m.CommandOption, error) {
-	optionType := m.CommandOptionType(interactionOption.Type)
+func convertToOpt(s *dg.Session, guildID string, interactOpt *dg.ApplicationCommandInteractionDataOption) (m.CommandOption, error) {
+	optType := m.CommandOptionType(interactOpt.Type)
 
-	var optionValue interface{}
-	switch optionType {
+	var optValue interface{}
+	switch optType {
 	case m.UserOption:
-		user := interactionOption.UserValue(s)
+		user := interactOpt.UserValue(s)
 		if user == nil {
 			return m.CommandOption{}, errors.New("User not found")
 		}
-		optionValue = m.User{
+		optValue = m.User{
 			ID:       user.ID,
 			Email:    user.Email,
 			Username: user.Username,
 		}
 	case m.RoleOption:
-		role := interactionOption.RoleValue(s, guildID)
+		role := interactOpt.RoleValue(s, guildID)
 		if role == nil {
 			return m.CommandOption{}, errors.New("Role not found")
 		}
-		optionValue = m.Role{
+		optValue = m.Role{
 			ID:   role.ID,
 			Name: role.Name,
 		}
 	default:
-		optionValue = interactionOption.Value
+		optValue = interactOpt.Value
 	}
 
 	return m.CommandOption{
-		Name:  interactionOption.Name,
-		Type:  optionType,
-		Value: optionValue,
+		Name:  interactOpt.Name,
+		Type:  optType,
+		Value: optValue,
 	}, nil
 }
 
-func componentEmojiFromEmoji(emoji m.Emoji) dg.ComponentEmoji {
+func convertToComponentEmoji(emoji m.Emoji) dg.ComponentEmoji {
 	switch emoji {
 	case m.ThumbsUpEmoji:
 		return dg.ComponentEmoji{
@@ -56,7 +56,7 @@ func componentEmojiFromEmoji(emoji m.Emoji) dg.ComponentEmoji {
 	return dg.ComponentEmoji{}
 }
 
-func componentsFromResponse(resp m.Response) ([]dg.MessageComponent, error) {
+func convertToComponent(resp m.Response) ([]dg.MessageComponent, error) {
 	if resp.Buttons == nil {
 		return nil, nil
 	}
