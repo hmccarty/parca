@@ -27,29 +27,29 @@ func (*Week) Description() string {
 	return "List this week's events for each calendar"
 }
 
-func (*Week) Options() []m.CommandOption {
-	return []m.CommandOption{}
+func (*Week) Options() []m.CommandOptionMetadata {
+	return nil
 }
 
-func (command *Week) Run(data m.CommandData, _ []m.CommandOption) m.Response {
-	client := command.createDbClient()
-	calendarIDs, err := client.GetCalendars(data.ChannelID, data.GuildID)
+func (cmd *Week) Run(ctx m.CommandContext) error {
+	client := cmd.createDbClient()
+	calendarIDs, err := client.GetCalendars(ctx.ChannelID(), ctx.GuildID())
 	if err != nil {
-		return m.Response{
-			Description: "Could not add calendar at this time, try again later",
-		}
+		return err
 	}
 
 	if len(calendarIDs) == 0 {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: "No calendars added to this channel",
-		}
+			Color:       m.ColorGreen,
+		})
 	}
 
 	endTime := time.Now().UTC().Add(7 * 24 * time.Hour)
 	var events []m.CalendarEventData
 	for _, calendarID := range calendarIDs {
-		calEvents, _ := command.calendarClient.GetCalendarEvents(calendarID, endTime)
+		calEvents, _ := cmd.calendarClient.GetCalendarEvents(calendarID, endTime)
 		events = append(events, calEvents...)
 	}
 
@@ -62,14 +62,10 @@ func (command *Week) Run(data m.CommandData, _ []m.CommandOption) m.Response {
 		}
 	}
 
-	return m.Response{
+	return ctx.Respond(m.Response{
+		Type:        m.MessageResponse,
 		Title:       "Week's events",
 		Description: desc,
-	}
-}
-
-func (*Week) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+		Color:       m.ColorGreen,
+	})
 }

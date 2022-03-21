@@ -1,4 +1,4 @@
-package currency
+package general
 
 import (
 	m "github.com/hmccarty/parca/internal/models"
@@ -18,20 +18,13 @@ func (*Status) Description() string {
 	return "Prints status of PARCA"
 }
 
-func (*Status) Options() []m.CommandOption {
-	return []m.CommandOption{}
+func (*Status) Options() []m.CommandOptionMetadata {
+	return []m.CommandOptionMetadata{}
 }
 
-func (*Status) Run(_ m.CommandData, _ []m.CommandOption) m.Response {
-	return m.Response{
+func (*Status) Run(ctx m.CommandContext) error {
+	return ctx.Respond(m.Response{
 		Type:        m.MessageResponse,
-		Description: "Never been better",
-	}
-}
-
-func (*Status) HandleReaction(_ m.CommandData, _ string) m.Response {
-	return m.Response{
-		Type:        m.MessageResponse,
-		Description: "Not expecting a reaction",
-	}
+		Description: "Better than ever",
+	})
 }

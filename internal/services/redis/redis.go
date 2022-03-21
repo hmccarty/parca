@@ -29,7 +29,6 @@ const (
 	pollTitleKey   = "poll:%s:title"
 	pollYesVoteKey = "poll:%s:yes"
 	pollNoVoteKey  = "poll:%s:no"
-	pollVotersKey  = "poll:%s:voters"
 )
 
 func OpenRedisClient(config *c.Config) m.DbClient {
@@ -56,7 +55,9 @@ func (r *RedisClient) GetUserBalance(userID string) (float64, error) {
 	ctx := context.Background()
 	key := fmt.Sprintf(userBalanceKey, userID)
 	val, err := r.client.Get(ctx, key).Result()
-	if err != nil {
+	if err == redis.Nil {
+		return 0, nil
+	} else if err != nil {
 		return 0, err
 	}
 
@@ -181,10 +182,13 @@ func (r *RedisClient) GetVerifyCode(userID string) (string, string, error) {
 
 	key := fmt.Sprintf(verifyCodeKey, userID)
 	value, err := r.client.HMGet(ctx, key, "code", "guildID").Result()
+
 	if err != nil {
 		return "", "", err
 	} else if len(value) != 2 {
 		return "", "", errors.New("failed to collect from redis")
+	} else if value[0] == nil || value[1] == nil {
+		return "", "", nil
 	}
 	return value[0].(string), value[1].(string), err
 }
@@ -199,18 +203,6 @@ func (r *RedisClient) CreatePoll(pollTitle, pollID string) error {
 	}
 	r.client.Set(ctx, titleKey, pollTitle, 0)
 
-	yesKey := fmt.Sprintf(pollYesVoteKey, pollID)
-	err = r.client.Set(ctx, yesKey, 0, 0).Err()
-	if err != nil {
-		return err
-	}
-
-	noKey := fmt.Sprintf(pollNoVoteKey, pollID)
-	err = r.client.Set(ctx, noKey, 0, 0).Err()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -224,48 +216,51 @@ func (r *RedisClient) GetPollTitle(pollID string) (string, error) {
 func (r *RedisClient) AddPollVote(vote bool, pollID, userID string) error {
 	ctx := context.Background()
 
-	voterKey := fmt.Sprintf(pollVotersKey, pollID)
-	hasVoted, err := r.client.SIsMember(ctx, voterKey, userID).Result()
-	if hasVoted == true {
-		return m.ErrorUserAlreadyVoted
-	} else if err != nil {
-		return err
-	}
-
-	var key string
-	if vote {
-		key = fmt.Sprintf(pollYesVoteKey, pollID)
+	var newVoteKey string
+	var oldVoteKey string
+	if vote == true {
+		newVoteKey = fmt.Sprintf(pollYesVoteKey, pollID)
+		oldVoteKey = fmt.Sprintf(pollNoVoteKey, pollID)
 	} else {
-		key = fmt.Sprintf(pollNoVoteKey, pollID)
+		newVoteKey = fmt.Sprintf(pollNoVoteKey, pollID)
+		oldVoteKey = fmt.Sprintf(pollYesVoteKey, pollID)
 	}
 
-	cnt, err := r.client.Get(ctx, key).Int()
-	if err != nil {
-		return m.ErrorPollIDDoesntExists
-	}
-
-	err = r.client.Set(ctx, key, cnt+1, 0).Err()
+	alreadyVoted, err := r.client.SIsMember(ctx, newVoteKey, userID).Result()
 	if err != nil {
 		return err
+	} else if alreadyVoted {
+		return m.ErrorUserAlreadyVoted
 	}
 
-	return r.client.SAdd(ctx, voterKey, userID).Err()
+	hasVoted, err := r.client.SIsMember(ctx, oldVoteKey, userID).Result()
+	if err != nil {
+		return err
+	} else if hasVoted {
+		wasRemoved, err := r.client.SRem(ctx, oldVoteKey, userID).Result()
+		if err != nil {
+			return err
+		} else if wasRemoved != 1 {
+			return m.ErrorUnableToRemoveVoter
+		}
+	}
+	return r.client.SAdd(ctx, newVoteKey, userID).Err()
 }
 
 func (r *RedisClient) GetPollVote(pollID string) (int, int, error) {
 	ctx := context.Background()
 
 	yesKey := fmt.Sprintf(pollYesVoteKey, pollID)
-	yesCnt, err := r.client.Get(ctx, yesKey).Int()
+	yesUsers, err := r.client.SMembers(ctx, yesKey).Result()
 	if err != nil {
 		return 0, 0, m.ErrorPollIDDoesntExists
 	}
 
 	noKey := fmt.Sprintf(pollNoVoteKey, pollID)
-	noCnt, err := r.client.Get(ctx, noKey).Int()
+	noUsers, err := r.client.SMembers(ctx, noKey).Result()
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return yesCnt, noCnt, nil
+	return len(yesUsers), len(noUsers), nil
 }

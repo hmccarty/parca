@@ -2,86 +2,74 @@ package discord
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	dg "github.com/bwmarrin/discordgo"
 	m "github.com/hmccarty/parca/internal/models"
 )
 
-type InteractHandler func(s *dg.Session, i *dg.InteractionCreate)
-
-func getInteractHandler(cmds []m.Command) InteractHandler {
-	appInteractHandlers := make(map[string]InteractHandler, len(cmds))
-	msgInteractHandlers := make(map[string]InteractHandler, len(cmds))
+func setCmdHandler(client *DiscordClient, cmds []m.Command) error {
+	cmdHandlers := make(map[string]m.Command, len(cmds))
 	for _, cmd := range cmds {
-		appInteractHandlers[cmd.Name()] = getAppInteractHandler(cmd)
-		msgInteractHandlers[cmd.Name()] = getMsgInteractHandler(cmd)
+		cmdHandlers[cmd.Name()] = cmd
 	}
 
-	return func(s *dg.Session, i *dg.InteractionCreate) {
-		switch i.Type {
-		case dg.InteractionApplicationCommand:
-			if h, ok := appInteractHandlers[i.ApplicationCommandData().Name]; ok {
-				h(s, i)
+	client.Session.AddHandler(
+		func(s *dg.Session, i *dg.InteractionCreate) {
+			var name string
+			switch i.Type {
+			case dg.InteractionApplicationCommand:
+				name = i.ApplicationCommandData().Name
+			case dg.InteractionMessageComponent:
+				// TODO: Error check
+				name = strings.Split(i.MessageComponentData().CustomID, "-")[0]
 			}
-			// TODO: Handle unexpected command case
-		case dg.InteractionMessageComponent:
-			key := strings.Split(i.MessageComponentData().CustomID, "-")[0]
-			if h, ok := msgInteractHandlers[key]; ok {
-				h(s, i)
+
+			if cmd, ok := cmdHandlers[name]; ok {
+				ctx, err := createCmdCtx(s, i.Interaction, cmd)
+				if err != nil {
+					fmt.Println("could not create command context")
+				} else {
+					err = cmd.Run(ctx)
+					if err != nil {
+						fmt.Println(err)
+					}
+				}
+			} else {
+				fmt.Println("command could not be found")
 			}
-		}
-	}
+		},
+	)
+
+	return nil
 }
 
-func getAppInteractHandler(cmd m.Command) InteractHandler {
-	return func(s *dg.Session, i *dg.InteractionCreate) {
-		cmdData := cmdDataFromInteract(i.Interaction)
-		appData := i.ApplicationCommandData()
-		options := make([]m.CommandOption, len(appData.Options))
-		for i, v := range appData.Options {
-			option, err := optFromInteract(s, cmdData.GuildID, v)
-			if err != nil {
-				log.Println(err)
-			}
-			options[i] = option
-		}
+func setEventHandlers(client *DiscordClient, events []m.Event) error {
+	for _, event := range events {
+		switch event.GetType() {
+		case m.OnMessageCreate:
+			client.Session.AddHandler(
+				func(s *dg.Session, e *dg.MessageCreate) {
+					if e.Author.ID == s.State.User.ID {
+						return
+					}
 
-		resp := cmd.Run(cmdData, options)
-		comp, err := componentsFromResponse(resp)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		switch resp.Type {
-		case m.MessageResponse:
-			err := s.InteractionRespond(i.Interaction, &dg.InteractionResponse{
-				Type: dg.InteractionResponseChannelMessageWithSource,
-				Data: &dg.InteractionResponseData{
-					Embeds: []*dg.MessageEmbed{
-						{
-							Title:       resp.Title,
-							Description: resp.Description,
-							URL:         resp.URL,
+					eventCtx := &DiscordEventContext{
+						session:   client.Session,
+						guildID:   e.GuildID,
+						userID:    e.Author.ID,
+						channelID: e.ChannelID,
+						messageID: e.Message.ID,
+						message: &m.ChatMessage{
+							ID:      e.Message.ID,
+							Content: e.Message.Content,
 						},
-					},
-
-					Components: comp,
+					}
+					event.Handle(eventCtx)
 				},
-			})
-			if err != nil {
-				fmt.Println(err)
-			}
+			)
 		}
 	}
-}
 
-func getMsgInteractHandler() {
-
-}
-
-func getMsgCreateHandler() {
-
+	return nil
 }

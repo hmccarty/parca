@@ -7,11 +7,13 @@ import (
 )
 
 type SetBalance struct {
+	modIDs         []string
 	createDbClient func() m.DbClient
 }
 
-func NewSetBalanceCommand(createDbClient func() m.DbClient) m.Command {
+func NewSetBalanceCommand(modIDs []string, createDbClient func() m.DbClient) m.Command {
 	return &SetBalance{
+		modIDs:         modIDs,
 		createDbClient: createDbClient,
 	}
 }
@@ -24,49 +26,60 @@ func (*SetBalance) Description() string {
 	return "Sets the balance of a user"
 }
 
-func (*SetBalance) Options() []m.CommandOption {
-	return []m.CommandOption{
+func (*SetBalance) Options() []m.CommandOptionMetadata {
+	return []m.CommandOptionMetadata{
 		{
-			Name:     "user",
-			Type:     m.UserOption,
-			Required: true,
+			Name:        "user",
+			Description: "User you would like to change the balance of",
+			Type:        m.UserOption,
+			Required:    true,
 		},
 		{
-			Name:     "amount",
-			Type:     m.NumberOption,
-			Required: true,
+			Name:        "amount",
+			Description: "Amount to change balance to",
+			Type:        m.FloatOption,
+			Required:    true,
 		},
 	}
 }
 
-func (command *SetBalance) Run(data m.CommandData, opts []m.CommandOption) m.Response {
-	if len(opts) != 2 {
-		return m.Response{
-			Description: "Invalid number of options",
-		}
+func (cmd *SetBalance) Run(ctx m.CommandContext) error {
+	if len(ctx.Options()) != 2 {
+		return m.ErrMissingOptions
 	}
 
-	var userID string
-	var amount float64
-	for _, option := range opts {
-		switch option.Name {
-		case "user":
-			userID = option.Value.(string)
-		case "amount":
-			amount = option.Value.(float64)
+	isMod := false
+	for _, modID := range cmd.modIDs {
+		if ctx.UserID() == modID {
+			isMod = true
+			break
 		}
 	}
+	if !isMod {
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
+			Description: "Only bot moderators can use this command",
+			Color:       m.ColorRed,
+		})
+	}
 
-	client := command.createDbClient()
-	client.SetUserBalance(userID, data.GuildID, amount)
+	userID, err := ctx.Options()[0].ToUser()
+	if err != nil {
+		return err
+	}
+
+	amount, err := ctx.Options()[1].ToFloat()
+	if err != nil {
+		return err
+	}
+
+	client := cmd.createDbClient()
+	client.SetUserBalance(userID, ctx.GuildID(), amount)
 	balance, _ := client.GetUserBalance(userID)
-	return m.Response{
-		Description: fmt.Sprintf("You have %.2f in your account", balance),
-	}
-}
-
-func (*SetBalance) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+	return ctx.Respond(m.Response{
+		Type: m.MessageResponse,
+		Description: fmt.Sprintf("Set <@%s>'s balance to %.2f",
+			userID, balance),
+		Color: m.ColorGreen,
+	})
 }

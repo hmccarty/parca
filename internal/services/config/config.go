@@ -7,6 +7,9 @@ import (
 )
 
 type Config struct {
+	// Commands
+	ModIDs []string `yaml:"mod_ids"`
+
 	// Discord
 	DiscordToken   string `yaml:"discord_token"`
 	DiscordAppID   string `yaml:"discord_app_id"`

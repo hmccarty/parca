@@ -1,6 +1,8 @@
 package events
 
 import (
+	"fmt"
+
 	m "github.com/hmccarty/parca/internal/models"
 )
 
@@ -18,24 +20,54 @@ func (*VerifyOnMessageEvent) GetType() m.EventType {
 	return m.OnMessageCreate
 }
 
-func (event *VerifyOnMessageEvent) Handle(data m.EventData) (*m.Response, error) {
-	client := event.createDbClient()
-	code, guildID, _ := client.GetVerifyCode(data.Message.Author.ID)
-
-	if code == "" {
-		return nil, nil
-	} else if data.Message.Content != code {
-		return &m.Response{
-			Description: "Invalid code",
-		}, nil
+func (event *VerifyOnMessageEvent) Handle(ctx m.EventContext) error {
+	isDM, err := ctx.IsChannelDM(ctx.ChannelID(), ctx.GuildID())
+	if err != nil {
+		return err
+	} else if !isDM {
+		return nil
+	} else if ctx.Message() == nil {
+		return m.ErrMissingData
 	}
 
-	_, roleID, _ := client.GetVerifyConfig(guildID)
+	client := event.createDbClient()
+	code, guildID, err := client.GetVerifyCode(ctx.UserID())
+	if err != nil {
+		return err
+	}
 
-	return &m.Response{
+	if code == "" {
+		return nil
+	} else if ctx.Message().Content != code {
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
+			Description: "Invalid code",
+			Color:       m.ColorRed,
+		})
+	}
+
+	_, roleID, err := client.GetVerifyConfig(guildID)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.Respond(m.Response{
 		Type:    m.AddRoleResponse,
 		GuildID: guildID,
-		UserID:  data.Message.Author.ID,
+		UserID:  ctx.UserID(),
 		RoleID:  roleID,
-	}, nil
+	})
+	if err != nil {
+		return err
+	}
+
+	guildName, err := ctx.GetGuildNameFromID(guildID)
+
+	return ctx.Respond(m.Response{
+		Type:        m.MessageResponse,
+		GuildID:     guildID,
+		ChannelID:   ctx.ChannelID(),
+		Description: fmt.Sprintf("You have been verified on %s", guildName),
+		Color:       m.ColorGreen,
+	})
 }

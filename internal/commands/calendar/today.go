@@ -27,29 +27,32 @@ func (*Today) Description() string {
 	return "List today's events for each calendar"
 }
 
-func (*Today) Options() []m.CommandOption {
-	return []m.CommandOption{}
+func (*Today) Options() []m.CommandOptionMetadata {
+	return nil
 }
 
-func (command *Today) Run(data m.CommandData, _ []m.CommandOption) m.Response {
-	client := command.createDbClient()
-	calendarIDs, err := client.GetCalendars(data.ChannelID, data.GuildID)
+func (cmd *Today) Run(ctx m.CommandContext) error {
+	client := cmd.createDbClient()
+	calendarIDs, err := client.GetCalendars(ctx.ChannelID(), ctx.GuildID())
 	if err != nil {
-		return m.Response{
-			Description: "Could not add calendar at this time, try again later",
-		}
+		return err
 	}
 
 	if len(calendarIDs) == 0 {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: "No calendars added to this channel",
-		}
+			Color:       m.ColorGreen,
+		})
 	}
 
 	endTime := time.Now().UTC().Add(24 * time.Hour)
 	var events []m.CalendarEventData
 	for _, calendarID := range calendarIDs {
-		calEvents, _ := command.calendarClient.GetCalendarEvents(calendarID, endTime)
+		calEvents, err := cmd.calendarClient.GetCalendarEvents(calendarID, endTime)
+		if err != nil {
+			return err
+		}
 		events = append(events, calEvents...)
 	}
 
@@ -58,18 +61,18 @@ func (command *Today) Run(data m.CommandData, _ []m.CommandOption) m.Response {
 		desc = "No events found"
 	} else {
 		for _, event := range events {
-			desc += fmt.Sprintf("%s\n%s\n", event.Name, event.Location)
+			desc += fmt.Sprintf("[%s](%s) \n%d/%d/%d at %d:%d\n%s\n",
+				event.Name, event.URL, event.Start.Day(), event.Start.Month(),
+				event.Start.Year(), event.Start.Hour(), event.Start.Minute(),
+				event.Location,
+			)
 		}
 	}
 
-	return m.Response{
+	return ctx.Respond(m.Response{
+		Type:        m.MessageResponse,
 		Title:       "Today's events",
 		Description: desc,
-	}
-}
-
-func (*Today) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+		Color:       m.ColorGreen,
+	})
 }

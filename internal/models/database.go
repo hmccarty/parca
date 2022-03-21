@@ -42,4 +42,5 @@ var (
 	ErrorPollIDAlreadyExists = errors.New("poll already exists with id")
 	ErrorPollIDDoesntExists  = errors.New("no poll with id")
 	ErrorUserAlreadyVoted    = errors.New("user already voted in poll")
+	ErrorUnableToRemoveVoter = errors.New("unable to remove voter")
 )

@@ -24,50 +24,46 @@ func (*RemoveCalendar) Description() string {
 	return "Removes calendar from channel"
 }
 
-func (*RemoveCalendar) Options() []m.CommandOption {
-	return []m.CommandOption{
+func (*RemoveCalendar) Options() []m.CommandOptionMetadata {
+	return []m.CommandOptionMetadata{
 		{
-			Name:     "calendar-id",
-			Type:     m.StringOption,
-			Required: true,
+			Name:        "calendar-id",
+			Description: "Unique ID of the calendar",
+			Type:        m.StringOption,
+			Required:    true,
 		},
 	}
 }
 
-func (command *RemoveCalendar) Run(data m.CommandData, opts []m.CommandOption) m.Response {
-	if len(opts) != 1 {
-		return m.Response{
-			Description: "Missing `calendar-id` argument",
-		}
+func (cmd *RemoveCalendar) Run(ctx m.CommandContext) error {
+	if len(ctx.Options()) != 1 {
+		return m.ErrMissingOptions
 	}
 
-	calendarID := opts[0].Value.(string)
-	client := command.createDbClient()
-	hasCalendar, err := client.HasCalendar(calendarID, data.ChannelID, data.GuildID)
+	calendarID, err := ctx.Options()[0].ToString()
 	if err != nil {
-		return m.Response{
-			Description: "Couldn't check calendar at this time, try again later",
-		}
+		return err
+	}
+
+	client := cmd.createDbClient()
+	hasCalendar, err := client.HasCalendar(calendarID, ctx.ChannelID(), ctx.GuildID())
+	if err != nil {
+		return err
 	} else if !hasCalendar {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: "Calendar doesn't exist in this channel",
-		}
+			Color:       m.ColorGreen,
+		})
 	}
 
-	err = client.RemoveCalendar(calendarID, data.ChannelID, data.GuildID)
+	err = client.RemoveCalendar(calendarID, ctx.ChannelID(), ctx.GuildID())
 	if err != nil {
-		return m.Response{
-			Description: "Couldn't remove calendar at this time, try again later",
-		}
+		return err
 	}
 
-	return m.Response{
+	return ctx.Respond(m.Response{
+		Type:        m.MessageResponse,
 		Description: "Removed calendar from channel",
-	}
-}
-
-func (*RemoveCalendar) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+	})
 }

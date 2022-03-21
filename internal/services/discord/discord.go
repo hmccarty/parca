@@ -9,7 +9,7 @@ import (
 	c "github.com/hmccarty/parca/internal/services/config"
 )
 
-func NewDiscordClient(config *c.Config, commands []m.Command, events []m.Event) (*DiscordClient, error) {
+func NewDiscordClient(config *c.Config, cmds []m.Command, events []m.Event) (*DiscordClient, error) {
 	client := new(DiscordClient)
 
 	// Setup Discord service to use API key
@@ -19,12 +19,9 @@ func NewDiscordClient(config *c.Config, commands []m.Command, events []m.Event) 
 	}
 	client.Session = session
 
-	// Setup command applications and event handlers
-	applications := make([]*dg.ApplicationCommand, len(commands))
-
-	client.Session.AddHandler()
-
-	setupEventHandlers(client, events)
+	// Setup handlers
+	setCmdHandler(client, cmds)
+	setEventHandlers(client, events)
 
 	// Open connection to Discord service
 	err = session.Open()
@@ -33,14 +30,20 @@ func NewDiscordClient(config *c.Config, commands []m.Command, events []m.Event) 
 	}
 
 	// Post applications to Discord
-	client.registeredApplications = make([]*dg.ApplicationCommand, len(commands))
-	for i, v := range applications {
-		cmd, err := client.Session.ApplicationCommandCreate(
-			config.DiscordAppID, config.DiscordGuildID, v)
+	client.registeredApplications = make([]*dg.ApplicationCommand, len(cmds))
+	for i, cmd := range cmds {
+		app, err := cmdToApp(cmd)
 		if err != nil {
-			log.Panicf("cannot create '%v' command: %v", v.Name, err)
+			return nil, err
 		}
-		client.registeredApplications[i] = cmd
+
+		registeredApp, err := client.Session.ApplicationCommandCreate(
+			config.DiscordAppID, config.DiscordGuildID, app)
+		if err != nil {
+			return nil, err
+		}
+
+		client.registeredApplications[i] = registeredApp
 	}
 
 	return client, nil

@@ -29,71 +29,69 @@ func (*Thanks) Description() string {
 	return "Sends a token of gratitude to another user (with txn fee)"
 }
 
-func (*Thanks) Options() []m.CommandOption {
-	return []m.CommandOption{
+func (*Thanks) Options() []m.CommandOptionMetadata {
+	return []m.CommandOptionMetadata{
 		{
-			Name:     "receiver",
-			Type:     m.UserOption,
-			Required: true,
+			Name:        "receiver",
+			Description: "User you would like to thank",
+			Type:        m.UserOption,
+			Required:    true,
 		},
 	}
 }
 
-func (command *Thanks) Run(data m.CommandData, opts []m.CommandOption) m.Response {
-	if len(opts) != 1 {
-		return m.Response{
-			Description: "Invalid number of options",
-		}
+func (cmd *Thanks) Run(ctx m.CommandContext) error {
+	if len(ctx.Options()) == 2 {
+		return m.ErrMissingOptions
 	}
 
-	client := command.createDbClient()
+	client := cmd.createDbClient()
 
-	var senderID string
-	if data.User == nil && data.Member == nil {
-		return m.Response{
-			Description: "You must be logged in to use this command",
-		}
-	} else if data.User != nil {
-		senderID = data.User.ID
-	} else {
-		senderID = data.Member.User.ID
-	}
-
+	senderID := ctx.UserID()
 	senderBalance, err := client.GetUserBalance(senderID)
 	if err != nil {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: fmt.Sprintf("Failed to get balance of <@%s>", senderID),
-		}
+			Color:       m.ColorRed,
+		})
 	} else if senderBalance < txnFee {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type: m.MessageResponse,
 			Description: fmt.Sprintf("Insufficient funds, you have %.2f coins and %.2f are required",
 				senderBalance, txnFee),
-		}
+			Color: m.ColorRed,
+		})
 	}
 
-	receiverID := opts[0].Value.(string)
+	receiverID, err := ctx.Options()[0].ToUser()
+	if err != nil {
+		return err
+	}
+
 	if senderID == receiverID {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: "You can't thank yourself",
-		}
+			Color:       m.ColorRed,
+		})
 	}
 
 	receiverBalance, err := client.GetUserBalance(receiverID)
 	if err != nil {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: fmt.Sprintf("Failed to get balance of <@%s>", receiverID),
-		}
+			Color:       m.ColorRed,
+		})
 	}
 
-	client.SetUserBalance(senderID, data.GuildID, senderBalance-txnFee)
-	client.SetUserBalance(receiverID, data.GuildID, receiverBalance+amount)
-	return m.Response{
-		Description: fmt.Sprintf("Sent <@%s> %.2f ARC coins", receiverID, amount),
-	}
-}
-
-func (*Thanks) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+	client.SetUserBalance(senderID, ctx.GuildID(), senderBalance-txnFee)
+	client.SetUserBalance(receiverID, ctx.GuildID(), receiverBalance+amount)
+	return ctx.Respond(m.Response{
+		Type: m.MessageResponse,
+		Description: fmt.Sprintf("<@%s> thanked <@%s> with %.2f ARC coins",
+			senderID, receiverID, amount),
+		Color: m.ColorGreen,
+	})
 }

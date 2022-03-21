@@ -24,39 +24,41 @@ func (*Balance) Description() string {
 	return "Gets the balance of a user"
 }
 
-func (*Balance) Options() []m.CommandOption {
-	return []m.CommandOption{
+func (*Balance) Options() []m.CommandOptionMetadata {
+	return []m.CommandOptionMetadata{
 		{
-			Name:     "user",
-			Type:     m.UserOption,
-			Required: false,
+			Name:        "user",
+			Description: "Balance you would like to check",
+			Type:        m.UserOption,
+			Required:    false,
 		},
 	}
 }
 
-func (command *Balance) Run(data m.CommandData, opts []m.CommandOption) m.Response {
-	var userID string
-	if len(opts) == 1 {
-		userID = opts[0].Value.(string)
-	} else if data.User == nil && data.Member == nil {
-		return m.Response{
-			Description: "You must be logged in to use this command",
+func (cmd *Balance) Run(ctx m.CommandContext) error {
+	var userID, userPrompt string
+	var err error
+	if len(ctx.Options()) == 1 {
+		userID, err = ctx.Options()[0].ToUser()
+		if err != nil {
+			return err
 		}
-	} else if data.User != nil {
-		userID = data.User.ID
+
+		userName, err := ctx.GetUserNameFromIDs(userID, ctx.GuildID())
+		if err != nil {
+			return err
+		}
+		userPrompt = userName + " owns"
 	} else {
-		userID = data.Member.User.ID
+		userID = ctx.UserID()
+		userPrompt = "You own"
 	}
 
-	client := command.createDbClient()
+	client := cmd.createDbClient()
 	balance, _ := client.GetUserBalance(userID)
-	return m.Response{
-		Description: fmt.Sprintf("You have %.2f in your account", balance),
-	}
-}
-
-func (*Balance) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+	return ctx.Respond(m.Response{
+		Type: m.MessageResponse,
+		Description: fmt.Sprintf("%s **%.2f** ARC coins",
+			userPrompt, balance),
+	})
 }

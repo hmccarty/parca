@@ -16,6 +16,7 @@ type CalendarData struct {
 type CalendarEventData struct {
 	Name     string
 	Location string
+	URL      string
 	Start    time.Time
 	End      time.Time
 }

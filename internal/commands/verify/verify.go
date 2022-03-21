@@ -3,6 +3,7 @@ package verify
 import (
 	"fmt"
 	"math/rand"
+	"regexp"
 
 	m "github.com/hmccarty/parca/internal/models"
 )
@@ -27,50 +28,61 @@ func (*Verify) Description() string {
 	return "Prompts server for verification role"
 }
 
-func (*Verify) Options() []m.CommandOption {
-	return []m.CommandOption{
+func (*Verify) Options() []m.CommandOptionMetadata {
+	return []m.CommandOptionMetadata{
 		{
-			Name:     "email",
-			Type:     m.StringOption,
-			Required: true,
+			Name:        "email",
+			Description: "Email with the domain required by the server",
+			Type:        m.StringOption,
+			Required:    true,
 		},
 	}
 }
 
-func (command *Verify) Run(data m.CommandData, opts []m.CommandOption) m.Response {
-	if len(opts) != 1 {
-		return m.Response{
-			Description: "Missing arguments",
-		}
+func (cmd *Verify) Run(ctx m.CommandContext) error {
+	if len(ctx.Options()) != 1 {
+		return m.ErrMissingOptions
 	}
 
-	// TODO: check email matches domain
-	email := opts[0].Value.(string)
-	code := fmt.Sprintf("%d", rand.Intn(6000-1000)+1000)
-	go command.emailClient.SendEmail(email, "Discord Server Verification", code)
-
-	var userID string
-	if data.User != nil {
-		userID = data.User.ID
-	} else {
-		userID = data.Member.User.ID
-	}
-
-	client := command.createDbClient()
-	err := client.AddVerifyCode(code, userID, data.GuildID)
+	email, err := ctx.Options()[0].ToString()
 	if err != nil {
-		return m.Response{
+		return err
+	}
+
+	client := cmd.createDbClient()
+	domain, _, err := client.GetVerifyConfig(ctx.GuildID())
+	if err != nil {
+		return err
+	}
+
+	validEmailPattern := fmt.Sprintf(`\b[0-9A-Za-z]+@%s\b`, domain)
+	isValidEmail, err := regexp.MatchString(validEmailPattern, email)
+	if err != nil {
+		return err
+	} else if !isValidEmail {
+		invalidMsg := fmt.Sprintf("Invalid email, ensure you use an email with a `%s` domain",
+			domain)
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
+			Description: invalidMsg,
+			Color:       m.ColorRed,
+		})
+	}
+
+	code := fmt.Sprintf("%d", rand.Intn(6000-1000)+1000)
+	go cmd.emailClient.SendEmail(email, "Discord Server Verification", code)
+
+	err = client.AddVerifyCode(code, ctx.UserID(), ctx.GuildID())
+	if err != nil {
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: "Failed to save code, try again later",
-		}
+			Color:       m.ColorRed,
+		})
 	}
 
-	return m.Response{
-		Description: "Check your email for code and respond in DMs",
-	}
-}
-
-func (*Verify) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+	return ctx.Respond(m.Response{
+		Type:        m.DMAuthorResponse,
+		Description: "Respond with the code sent to your email here",
+	})
 }

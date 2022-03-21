@@ -21,80 +21,81 @@ func (*Pay) Name() string {
 }
 
 func (*Pay) Description() string {
-	return "Sends a token of gratitude to another user (with txn fee)"
+	return "Sends a token of gratitude to another user (w/o txn fee)"
 }
 
-func (*Pay) Options() []m.CommandOption {
-	return []m.CommandOption{
+func (*Pay) Options() []m.CommandOptionMetadata {
+	return []m.CommandOptionMetadata{
 		{
-			Name:     "receiver",
-			Type:     m.UserOption,
-			Required: true,
+			Name:        "receiver",
+			Description: "User you would like to send money to",
+			Type:        m.UserOption,
+			Required:    true,
 		},
 		{
-			Name:     "amount",
-			Type:     m.NumberOption,
-			Required: true,
+			Name:        "amount",
+			Description: "Amount you would like to send",
+			Type:        m.FloatOption,
+			Required:    true,
 		},
 	}
 }
 
-func (command *Pay) Run(data m.CommandData, opts []m.CommandOption) m.Response {
-	if len(opts) != 2 {
-		return m.Response{
-			Description: "Invalid number of options",
-		}
+func (cmd *Pay) Run(ctx m.CommandContext) error {
+	if len(ctx.Options()) != 2 {
+		return m.ErrMissingOptions
 	}
 
-	client := command.createDbClient()
+	client := cmd.createDbClient()
 
-	var senderID string
-	if data.User == nil && data.Member == nil {
-		return m.Response{
-			Description: "You must be logged in to use this command",
-		}
-	} else if data.User != nil {
-		senderID = data.User.ID
-	} else {
-		senderID = data.Member.User.ID
-	}
-
+	senderID := ctx.UserID()
 	senderBalance, err := client.GetUserBalance(senderID)
-	amount := opts[1].Value.(float64)
+
+	amount, err := ctx.Options()[1].ToFloat()
 	if err != nil {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: fmt.Sprintf("Failed to get balance of <@%s>", senderID),
-		}
+			Color:       m.ColorRed,
+		})
 	} else if senderBalance < amount {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type: m.MessageResponse,
 			Description: fmt.Sprintf("Insufficient funds, you have %.2f coins and %.2f are required",
 				senderBalance, amount),
-		}
+			Color: m.ColorRed,
+		})
 	}
 
-	receiverID := opts[0].Value.(string)
-	if senderID == receiverID {
-		return m.Response{
-			Description: "You can't thank yourself",
-		}
+	receiverID, err := ctx.Options()[0].ToUser()
+	if err != nil {
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
+			Description: "Failed to find other user",
+			Color:       m.ColorRed,
+		})
+	} else if senderID == receiverID {
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
+			Description: "You can't pay yourself",
+			Color:       m.ColorRed,
+		})
 	}
 
 	receiverBalance, err := client.GetUserBalance(receiverID)
 	if err != nil {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: fmt.Sprintf("Failed to get balance of <@%s>", receiverID),
-		}
+			Color:       m.ColorRed,
+		})
 	}
 
-	client.SetUserBalance(senderID, data.GuildID, senderBalance-amount)
-	client.SetUserBalance(receiverID, data.GuildID, receiverBalance+amount)
-	return m.Response{
+	client.SetUserBalance(senderID, ctx.GuildID(), senderBalance-amount)
+	client.SetUserBalance(receiverID, ctx.GuildID(), receiverBalance+amount)
+	return ctx.Respond(m.Response{
+		Type:        m.MessageResponse,
 		Description: fmt.Sprintf("Paid <@%s> %.2f ARC coins", receiverID, amount),
-	}
-}
-
-func (*Pay) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+		Color:       m.ColorGreen,
+	})
 }

@@ -7,42 +7,84 @@ import (
 	m "github.com/hmccarty/parca/internal/models"
 )
 
-func convertToOpt(s *dg.Session, guildID string, interactOpt *dg.ApplicationCommandInteractionDataOption) (m.CommandOption, error) {
-	optType := m.CommandOptionType(interactOpt.Type)
+var (
+	ErrOptionTypeNotSupported = errors.New("option type is not supported")
+)
 
-	var optValue interface{}
-	switch optType {
-	case m.UserOption:
-		user := interactOpt.UserValue(s)
-		if user == nil {
-			return m.CommandOption{}, errors.New("User not found")
+func cmdToApp(cmd m.Command) (*dg.ApplicationCommand, error) {
+	var opts []*dg.ApplicationCommandOption
+	for _, cmdOpt := range cmd.Options() {
+		opt, err := cmdOptMetadataToAppOpt(cmdOpt)
+		if err != nil {
+			return nil, err
 		}
-		optValue = m.User{
-			ID:       user.ID,
-			Email:    user.Email,
-			Username: user.Username,
-		}
-	case m.RoleOption:
-		role := interactOpt.RoleValue(s, guildID)
-		if role == nil {
-			return m.CommandOption{}, errors.New("Role not found")
-		}
-		optValue = m.Role{
-			ID:   role.ID,
-			Name: role.Name,
-		}
-	default:
-		optValue = interactOpt.Value
+		opts = append(opts, opt)
 	}
 
-	return m.CommandOption{
-		Name:  interactOpt.Name,
-		Type:  optType,
-		Value: optValue,
+	return &dg.ApplicationCommand{
+		Name:        cmd.Name(),
+		Description: cmd.Description(),
+		Options:     opts,
 	}, nil
 }
 
-func convertToComponentEmoji(emoji m.Emoji) dg.ComponentEmoji {
+func cmdOptMetadataToAppOpt(cmdOptMetadata m.CommandOptionMetadata) (*dg.ApplicationCommandOption, error) {
+	optType, err := cmdOptTypeToDiscordOpt(cmdOptMetadata.Type)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dg.ApplicationCommandOption{
+		Type:        optType,
+		Name:        cmdOptMetadata.Name,
+		Description: cmdOptMetadata.Description,
+		Required:    cmdOptMetadata.Required,
+	}, nil
+}
+
+func cmdOptTypeToDiscordOpt(optType m.CommandOptionType) (dg.ApplicationCommandOptionType, error) {
+	switch optType {
+	case m.StringOption:
+		return dg.ApplicationCommandOptionString, nil
+	case m.IntegerOption:
+		return dg.ApplicationCommandOptionInteger, nil
+	case m.FloatOption:
+		return dg.ApplicationCommandOptionNumber, nil
+	case m.BooleanOption:
+		return dg.ApplicationCommandOptionBoolean, nil
+	case m.UserOption:
+		return dg.ApplicationCommandOptionUser, nil
+	case m.ChannelOption:
+		return dg.ApplicationCommandOptionChannel, nil
+	case m.RoleOption:
+		return dg.ApplicationCommandOptionRole, nil
+	default:
+		return 0, ErrOptionTypeNotSupported
+	}
+}
+
+func discordOptTypeToCmdOpt(optType dg.ApplicationCommandOptionType) (m.CommandOptionType, error) {
+	switch optType {
+	case dg.ApplicationCommandOptionString:
+		return m.StringOption, nil
+	case dg.ApplicationCommandOptionInteger:
+		return m.IntegerOption, nil
+	case dg.ApplicationCommandOptionNumber:
+		return m.FloatOption, nil
+	case dg.ApplicationCommandOptionBoolean:
+		return m.BooleanOption, nil
+	case dg.ApplicationCommandOptionUser:
+		return m.UserOption, nil
+	case dg.ApplicationCommandOptionChannel:
+		return m.ChannelOption, nil
+	case dg.ApplicationCommandOptionRole:
+		return m.RoleOption, nil
+	default:
+		return 0, ErrOptionTypeNotSupported
+	}
+}
+
+func emojiToComponentEmoji(emoji m.Emoji) dg.ComponentEmoji {
 	switch emoji {
 	case m.ThumbsUpEmoji:
 		return dg.ComponentEmoji{
@@ -56,8 +98,8 @@ func convertToComponentEmoji(emoji m.Emoji) dg.ComponentEmoji {
 	return dg.ComponentEmoji{}
 }
 
-func convertToComponent(resp m.Response) ([]dg.MessageComponent, error) {
-	if resp.Buttons == nil {
+func buttonsToComponent(buttons []m.ResponseButton) (dg.MessageComponent, error) {
+	if buttons == nil {
 		return nil, nil
 	}
 
@@ -65,7 +107,7 @@ func convertToComponent(resp m.Response) ([]dg.MessageComponent, error) {
 		Components: []dg.MessageComponent{},
 	}
 
-	for _, button := range resp.Buttons {
+	for _, button := range buttons {
 		var style dg.ButtonStyle
 		switch button.Style {
 		case m.PrimaryButtonStyle:
@@ -81,68 +123,12 @@ func convertToComponent(resp m.Response) ([]dg.MessageComponent, error) {
 		actionRow.Components = append(actionRow.Components,
 			dg.Button{
 				Label:    button.Label,
-				Emoji:    componentEmojiFromEmoji(button.Emoji),
+				Emoji:    emojiToComponentEmoji(button.Emoji),
 				Style:    style,
 				URL:      button.URL,
 				CustomID: button.ReactData,
 			})
 	}
 
-	return []dg.MessageComponent{actionRow}, nil
-}
-
-func messageFromData(message *dg.Message) *m.Message {
-	if message == nil {
-		return nil
-	}
-	return &m.Message{
-		ID:        message.ID,
-		ChannelID: message.ChannelID,
-		GuildID:   message.GuildID,
-		Content:   message.Content,
-		Timestamp: message.Timestamp,
-		Author:    userFromData(message.Author),
-		Member:    memberFromData(message.Member),
-	}
-}
-
-func userFromData(user *dg.User) *m.User {
-	if user == nil {
-		return nil
-	}
-	return &m.User{
-		ID:       user.ID,
-		Email:    user.Email,
-		Username: user.Username,
-	}
-}
-
-func memberFromData(member *dg.Member) *m.Member {
-	if member == nil {
-		return nil
-	}
-	return &m.Member{
-		GuildID: member.GuildID,
-		User:    userFromData(member.User),
-		Roles:   member.Roles,
-	}
-}
-
-func roleFromData(role *dg.Role) *m.Role {
-	if role == nil {
-		return nil
-	}
-	return &m.Role{
-		ID:   role.ID,
-		Name: role.Name,
-	}
-}
-
-func cmdDataFromInteract(interact *dg.Interaction) m.CommandData {
-	return m.CommandData{
-		GuildID:   interact.GuildID,
-		ChannelID: interact.ChannelID,
-		User:      userFromData(interact.User),
-		Member:    memberFromData(interact.Member),
-	}
+	return actionRow, nil
 }

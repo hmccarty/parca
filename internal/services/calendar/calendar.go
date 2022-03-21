@@ -139,9 +139,37 @@ func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end tim
 			continue
 		}
 
+		var location string
+		if eventDataRaw["location"] != nil {
+			location = eventDataRaw["location"].(string)
+		} else {
+			continue
+		}
+
+		var htmlLink string
+		if eventDataRaw["htmlLink"] != nil {
+			summary = eventDataRaw["htmlLink"].(string)
+		} else {
+			continue
+		}
+
+		var startTime time.Time
+		if eventDataRaw["start"] != nil {
+			startTimeRaw := eventDataRaw["start"].(map[string]interface{})
+			if startTimeRaw["dateTime"] != nil {
+				startTime, err = time.Parse(time.RFC3339, startTimeRaw["dateTime"].(string))
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
 		calendarEventsData = append(calendarEventsData,
 			m.CalendarEventData{
-				Name: summary,
+				Name:     summary,
+				Location: location,
+				URL:      htmlLink,
+				Start:    startTime,
 			})
 	}
 	return calendarEventsData, nil

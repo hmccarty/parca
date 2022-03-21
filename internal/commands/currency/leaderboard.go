@@ -24,32 +24,28 @@ func (*Leaderboard) Description() string {
 	return "Prints richest users on server"
 }
 
-func (*Leaderboard) Options() []m.CommandOption {
-	return []m.CommandOption{}
+func (*Leaderboard) Options() []m.CommandOptionMetadata {
+	return nil
 }
 
-func (command *Leaderboard) Run(data m.CommandData, _ []m.CommandOption) m.Response {
-	client := command.createDbClient()
-	balances, err := client.GetBalancesFromGuild(data.GuildID)
+func (cmd *Leaderboard) Run(ctx m.CommandContext) error {
+	client := cmd.createDbClient()
+	balances, err := client.GetBalancesFromGuild(ctx.GuildID())
 	if err != nil {
-		return m.Response{
+		return ctx.Respond(m.Response{
+			Type:        m.MessageResponse,
 			Description: "Everybody is broke",
-		}
+		})
 	}
 
 	var msg string = ""
 	for i, balance := range balances {
-		msg += fmt.Sprintf("%d. <@%s> has %.2f coins\n",
+		msg += fmt.Sprintf("%d. <@%s> has %.2f ARC coins\n",
 			i+1, balance.UserID, balance.Balance)
 	}
-	return m.Response{
+	return ctx.Respond(m.Response{
+		Type:        m.MessageResponse,
 		Title:       "Leaderboard",
 		Description: msg,
-	}
-}
-
-func (*Leaderboard) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+	})
 }

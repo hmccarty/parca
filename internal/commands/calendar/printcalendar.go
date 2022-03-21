@@ -26,17 +26,17 @@ func (*PrintCalendar) Description() string {
 	return "Lists all calendars active in channel"
 }
 
-func (*PrintCalendar) Options() []m.CommandOption {
-	return []m.CommandOption{}
+func (*PrintCalendar) Options() []m.CommandOptionMetadata {
+	return nil
 }
 
-func (command *PrintCalendar) Run(data m.CommandData, _ []m.CommandOption) m.Response {
-	client := command.createDbClient()
-	calendarIDs, err := client.GetCalendars(data.ChannelID, data.GuildID)
+func (cmd *PrintCalendar) Run(ctx m.CommandContext) error {
+	client := cmd.createDbClient()
+	calendarIDs, err := client.GetCalendars(ctx.ChannelID(), ctx.GuildID())
 	if err != nil {
-		return m.Response{
+		return ctx.Respond(m.Response{
 			Description: "Could not add calendar at this time, try again later",
-		}
+		})
 	}
 
 	desc := ""
@@ -44,7 +44,7 @@ func (command *PrintCalendar) Run(data m.CommandData, _ []m.CommandOption) m.Res
 		desc = "No calendars found"
 	} else {
 		for _, calendarID := range calendarIDs {
-			calendar, err := command.calendarClient.GetCalendarData(calendarID)
+			calendar, err := cmd.calendarClient.GetCalendarData(calendarID)
 			if err != nil {
 				desc += fmt.Sprintf("- %s (Couldn't retrieve title)\n", calendarID)
 			} else {
@@ -53,14 +53,8 @@ func (command *PrintCalendar) Run(data m.CommandData, _ []m.CommandOption) m.Res
 		}
 	}
 
-	return m.Response{
-		Title:       fmt.Sprintf("Calendars in <#%s>", data.ChannelID),
+	return ctx.Respond(m.Response{
+		Title:       fmt.Sprintf("Calendars in <#%s>", ctx.ChannelID()),
 		Description: desc,
-	}
-}
-
-func (*PrintCalendar) HandleReaction(data m.CommandData, reaction string) m.Response {
-	return m.Response{
-		Description: "Not expecting a reaction",
-	}
+	})
 }
