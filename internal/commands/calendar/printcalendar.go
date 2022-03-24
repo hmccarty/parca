@@ -53,8 +53,13 @@ func (cmd *PrintCalendar) Run(ctx m.CommandContext) error {
 		}
 	}
 
+	channelName, err := ctx.GetChannelNameFromIDs(ctx.ChannelID(), ctx.GuildID())
+	if err != nil {
+		return err
+	}
+
 	return ctx.Respond(m.Response{
-		Title:       fmt.Sprintf("Calendars in <#%s>", ctx.ChannelID()),
+		Title:       fmt.Sprintf("Calendars in #%s", channelName),
 		Description: desc,
 	})
 }

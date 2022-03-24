@@ -32,7 +32,7 @@ General:
 Domain verification:
 
 - configuredomain (X)
-- verify ( ) -
+- verify (X)
 
 Games:
 

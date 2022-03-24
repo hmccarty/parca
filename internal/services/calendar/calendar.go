@@ -103,8 +103,10 @@ func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end tim
 
 	data := url.Values{}
 	data.Set("access_token", client.token)
-	data.Set("timeMin", time.Now().UTC().Format(time.RFC3339))
+	data.Set("orderBy", "startTime")
+	data.Set("singleEvents", "True")
 	data.Set("timeMax", end.Format(time.RFC3339))
+	data.Set("timeMin", time.Now().UTC().Format(time.RFC3339))
 
 	url := fmt.Sprintf(getCalendarEventsListURL, calendarID, data.Encode())
 	resp, err := http.Get(url)
@@ -132,6 +134,7 @@ func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end tim
 	for _, v := range eventItemsRaw {
 		eventDataRaw := v.(map[string]interface{})
 
+		// Parse mandatory parameters first
 		var summary string
 		if eventDataRaw["summary"] != nil {
 			summary = eventDataRaw["summary"].(string)
@@ -139,16 +142,9 @@ func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end tim
 			continue
 		}
 
-		var location string
-		if eventDataRaw["location"] != nil {
-			location = eventDataRaw["location"].(string)
-		} else {
-			continue
-		}
-
 		var htmlLink string
 		if eventDataRaw["htmlLink"] != nil {
-			summary = eventDataRaw["htmlLink"].(string)
+			htmlLink = eventDataRaw["htmlLink"].(string)
 		} else {
 			continue
 		}
@@ -157,11 +153,50 @@ func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end tim
 		if eventDataRaw["start"] != nil {
 			startTimeRaw := eventDataRaw["start"].(map[string]interface{})
 			if startTimeRaw["dateTime"] != nil {
-				startTime, err = time.Parse(time.RFC3339, startTimeRaw["dateTime"].(string))
+				startTime, err = time.Parse("2006-01-02T15:04:05-07:00",
+					startTimeRaw["dateTime"].(string))
 				if err != nil {
 					return nil, err
 				}
+			} else if startTimeRaw["date"] != nil {
+				startTime, err = time.Parse("2006-01-02",
+					startTimeRaw["date"].(string))
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				continue
 			}
+		} else {
+			continue
+		}
+
+		var endTime time.Time
+		if eventDataRaw["end"] != nil {
+			endTimeRaw := eventDataRaw["end"].(map[string]interface{})
+			if endTimeRaw["dateTime"] != nil {
+				endTime, err = time.Parse("2006-01-02T15:04:05-07:00",
+					endTimeRaw["dateTime"].(string))
+				if err != nil {
+					return nil, err
+				}
+			} else if endTimeRaw["date"] != nil {
+				endTime, err = time.Parse("2006-01-02",
+					endTimeRaw["date"].(string))
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				continue
+			}
+		} else {
+			continue
+		}
+
+		// Parse optional parameters
+		var location string
+		if eventDataRaw["location"] != nil {
+			location = eventDataRaw["location"].(string)
 		}
 
 		calendarEventsData = append(calendarEventsData,
@@ -170,6 +205,7 @@ func (client *GoogleCalendarClient) GetCalendarEvents(calendarID string, end tim
 				Location: location,
 				URL:      htmlLink,
 				Start:    startTime,
+				End:      endTime,
 			})
 	}
 	return calendarEventsData, nil

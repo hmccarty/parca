@@ -1,7 +1,6 @@
 package calendar
 
 import (
-	"fmt"
 	"time"
 
 	m "github.com/hmccarty/parca/internal/models"
@@ -61,11 +60,12 @@ func (cmd *Today) Run(ctx m.CommandContext) error {
 		desc = "No events found"
 	} else {
 		for _, event := range events {
-			desc += fmt.Sprintf("[%s](%s) \n%d/%d/%d at %d:%d\n%s\n",
-				event.Name, event.URL, event.Start.Day(), event.Start.Month(),
-				event.Start.Year(), event.Start.Hour(), event.Start.Minute(),
-				event.Location,
-			)
+			desc += m.ConstructCalendarEventMsg(event)
+
+			// Prevent message overflow
+			if len(desc) > 4000 {
+				break
+			}
 		}
 	}
 
