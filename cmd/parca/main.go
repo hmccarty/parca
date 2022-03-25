@@ -42,6 +42,7 @@ func main() {
 		gencmd.NewStatusCommand(),
 		gencmd.NewRoleMenuCommand(),
 		gencmd.NewPollCommand(createDbClient),
+		gencmd.NewBountyCommand(createDbClient),
 
 		// Currency Commands
 		curcmd.NewBalanceCommand(createDbClient),

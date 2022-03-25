@@ -129,13 +129,29 @@ func (c *DiscordCmdContext) Respond(resp m.Response) error {
 			return err
 		}
 
-		c.session.ChannelMessageSendEmbed(dmChannel.ID,
-			&dg.MessageEmbed{
-				Title:       resp.Title,
-				Description: resp.Description,
-				URL:         resp.URL,
-				Color:       resp.Color,
-			})
+		var components []dg.MessageComponent
+		btnComponent, err := buttonsToComponent(resp.Buttons)
+		if err != nil {
+			return err
+		} else if btnComponent != nil {
+			components = []dg.MessageComponent{
+				btnComponent,
+			}
+		}
+
+		c.session.ChannelMessageSendComplex(dmChannel.ID,
+			&dg.MessageSend{
+				Embeds: []*dg.MessageEmbed{
+					{
+						Title:       resp.Title,
+						Description: resp.Description,
+						URL:         resp.URL,
+						Color:       resp.Color,
+					},
+				},
+				Components: components,
+			},
+		)
 
 		interactResp := &dg.InteractionResponse{
 			Type: dg.InteractionResponseChannelMessageWithSource,

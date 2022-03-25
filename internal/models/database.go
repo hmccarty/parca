@@ -29,6 +29,9 @@ type DbClient interface {
 	GetPollTitle(pollID string) (string, error)
 	AddPollVote(vote bool, pollID, userID string) error
 	GetPollVote(pollID string) (int, int, error)
+
+	CreateBounty(bountyDesc, bountyID string) error
+	GetBountyDesc(bountyID string) (string, error)
 }
 
 type OpenClient func(config *c.Config) (DbClient, error)
@@ -43,4 +46,7 @@ var (
 	ErrorPollIDDoesntExists  = errors.New("no poll with id")
 	ErrorUserAlreadyVoted    = errors.New("user already voted in poll")
 	ErrorUnableToRemoveVoter = errors.New("unable to remove voter")
+
+	ErrorBountyIDAlreadyExists = errors.New("bounty already exists with id")
+	ErrorBountyIDDoesntExists  = errors.New("no bounty with id")
 )

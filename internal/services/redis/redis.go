@@ -29,6 +29,8 @@ const (
 	pollTitleKey   = "poll:%s:title"
 	pollYesVoteKey = "poll:%s:yes"
 	pollNoVoteKey  = "poll:%s:no"
+
+	bountyDescKey = "bounty:%s:desc"
 )
 
 func OpenRedisClient(config *c.Config) m.DbClient {
@@ -263,4 +265,24 @@ func (r *RedisClient) GetPollVote(pollID string) (int, int, error) {
 	}
 
 	return len(yesUsers), len(noUsers), nil
+}
+
+func (r *RedisClient) CreateBounty(bountyDesc, bountyID string) error {
+	ctx := context.Background()
+
+	descKey := fmt.Sprintf(bountyDescKey, bountyID)
+	_, err := r.client.Get(ctx, descKey).Result()
+	if err == nil {
+		return m.ErrorBountyIDAlreadyExists
+	}
+	r.client.Set(ctx, descKey, bountyDesc, 0)
+
+	return nil
+}
+
+func (r *RedisClient) GetBountyDesc(bountyID string) (string, error) {
+	ctx := context.Background()
+
+	descKey := fmt.Sprintf(bountyDescKey, bountyID)
+	return r.client.Get(ctx, descKey).Result()
 }
