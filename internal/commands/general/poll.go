@@ -45,7 +45,7 @@ func (*Poll) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *Poll) Run(ctx m.CommandContext) error {
+func (cmd *Poll) Run(ctx m.ChatContext) error {
 	if ctx.Options() != nil {
 		opts := ctx.Options()
 		title, err := opts[0].ToString()

@@ -56,7 +56,7 @@ func (*Bounty) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *Bounty) Run(ctx m.CommandContext) error {
+func (cmd *Bounty) Run(ctx m.ChatContext) error {
 	if ctx.Options() != nil {
 		// If command is called
 		opts := ctx.Options()
@@ -124,7 +124,7 @@ func (cmd *Bounty) Run(ctx m.CommandContext) error {
 		switch reactType {
 		case "submit":
 			err := ctx.Respond(m.Response{
-				Type:        m.DMAuthorResponse,
+				Type:        m.DMResponse,
 				UserID:      userID,
 				Description: fmt.Sprintf("Did <@%s> do it?", ctx.UserID()),
 				Buttons: []m.ResponseButton{
@@ -144,9 +144,13 @@ func (cmd *Bounty) Run(ctx m.CommandContext) error {
 				return err
 			}
 
-			fmt.Println("test")
-
 		case "accept":
+
+			err := ctx.Respond(m.Response{
+				Type: m.MessageEditResponse,
+				MessageID: ctx.Message().ID,
+				GuildID: ctx.Message()
+			})
 
 		case "deny":
 		}

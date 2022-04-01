@@ -26,7 +26,7 @@ func setCmdHandler(client *DiscordClient, cmds []m.Command) error {
 			}
 
 			if cmd, ok := cmdHandlers[name]; ok {
-				ctx, err := createCmdCtx(s, i.Interaction, cmd)
+				ctx, err := createCtx(s, i.Interaction, cmd)
 				if err != nil {
 					fmt.Println("could not create command context")
 				} else {
@@ -72,4 +72,11 @@ func setEventHandlers(client *DiscordClient, events []m.Event) error {
 	}
 
 	return nil
+}
+
+func handleDirectResponses(ctx *DiscordContext) {
+}
+
+func handleIndirectResponses(ctx *DiscordContext) {
+
 }

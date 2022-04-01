@@ -10,7 +10,7 @@ type Command interface {
 	Name() string
 	Description() string
 	Options() []CommandOptionMetadata
-	Run(ctx CommandContext) error
+	Run(ctx ChatContext) error
 }
 
 type CommandContext interface {

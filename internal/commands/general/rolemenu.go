@@ -67,7 +67,7 @@ func (*RoleMenu) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (*RoleMenu) Run(ctx m.CommandContext) error {
+func (*RoleMenu) Run(ctx m.ChatContext) error {
 	if ctx.Options() != nil {
 		// If command is called
 		opts := ctx.Options()

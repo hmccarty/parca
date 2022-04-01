@@ -30,7 +30,7 @@ type DbClient interface {
 	AddPollVote(vote bool, pollID, userID string) error
 	GetPollVote(pollID string) (int, int, error)
 
-	CreateBounty(bountyDesc, bountyID string) error
+	CreateBounty(messageID, channelID, guildID, bountyID string) error
 	GetBountyDesc(bountyID string) (string, error)
 }
 

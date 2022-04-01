@@ -22,7 +22,7 @@ func (*Status) Options() []m.CommandOptionMetadata {
 	return []m.CommandOptionMetadata{}
 }
 
-func (*Status) Run(ctx m.CommandContext) error {
+func (*Status) Run(ctx m.ChatContext) error {
 	return ctx.Respond(m.Response{
 		Type:        m.MessageResponse,
 		Description: "Better than ever",

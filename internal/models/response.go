@@ -5,6 +5,7 @@ type Response struct {
 	GuildID   string
 	ChannelID string
 	UserID    string
+	MessageID string
 	Color     int
 
 	// Message responses
@@ -21,7 +22,7 @@ type ResponseType uint8
 
 const (
 	MessageResponse     ResponseType = 0
-	DMAuthorResponse    ResponseType = 1
+	DMResponse          ResponseType = 1
 	AddRoleResponse     ResponseType = 2
 	RemoveRoleResponse  ResponseType = 3
 	MessageEditResponse ResponseType = 4
