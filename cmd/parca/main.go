@@ -22,7 +22,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	// calendarClient := calendar.NewGoogleCalendarClient(conf)
+	// calendarClient := gcalendar.NewGoogleCalendarClient(conf)
 	// smtpClient, err := smtp.NewSMTPClient(conf)
 	// if err != nil {
 	// 	fmt.Println(err)

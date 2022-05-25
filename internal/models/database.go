@@ -30,8 +30,8 @@ type DbClient interface {
 	AddPollVote(vote bool, pollID, userID string) error
 	GetPollVote(pollID string) (int, int, error)
 
-	CreateBounty(messageID, channelID, guildID, bountyID string) error
-	GetBountyDesc(bountyID string) (string, error)
+	CreateBounty(bountyID, title, desc, link string) error
+	GetBounty(bountyID string) (string, string, string, error)
 }
 
 type OpenClient func(config *c.Config) (DbClient, error)
@@ -42,11 +42,12 @@ type BalanceEntry struct {
 }
 
 var (
+	ErrorPollIDDoesntExist   = errors.New("poll doesnt exist with id")
 	ErrorPollIDAlreadyExists = errors.New("poll already exists with id")
-	ErrorPollIDDoesntExists  = errors.New("no poll with id")
 	ErrorUserAlreadyVoted    = errors.New("user already voted in poll")
 	ErrorUnableToRemoveVoter = errors.New("unable to remove voter")
 
 	ErrorBountyIDAlreadyExists = errors.New("bounty already exists with id")
-	ErrorBountyIDDoesntExists  = errors.New("no bounty with id")
+	ErrorBountyIDDoesntExist   = errors.New("no bounty with id")
+	ErrorBountyIDMissingValues = errors.New("missing values for bounty")
 )

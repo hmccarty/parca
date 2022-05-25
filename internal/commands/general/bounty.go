@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	bountySubmitReactData = "bounty-submit-%s"
-	bountyAcceptReactData = "bounty-accept-%s"
-	bountyDenyReactData   = "bounty-deny-%s"
+	bountySubmitReactData = "bounty-submit-%s-%s-%s-%s"
+	bountyAcceptReactData = "bounty-accept-%s-%s-%s-%s-%s"
+	bountyDenyReactData   = "bounty-deny-%s-%s-%s-%s-%s"
 )
 
 type Bounty struct {
@@ -78,36 +78,36 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 			}
 		}
 
-		_ = link
-
-		bountyID := fmt.Sprintf("%d", rand.Intn(100000))
-
 		client := cmd.createDbClient()
-		err = client.CreateBounty(desc, bountyID)
+		bountyID := fmt.Sprintf("%d", rand.Intn(100000))
+		err = client.CreateBounty(bountyID, title, desc, link)
 		if err != nil {
 			if err == m.ErrorBountyIDAlreadyExists {
 				for err == m.ErrorBountyIDAlreadyExists {
 					bountyID = fmt.Sprintf("%d", rand.Intn(100000))
-					err = client.CreateBounty(desc, bountyID)
+					err = client.CreateBounty(bountyID, title, desc, link)
 				}
 				if err != nil {
 					return ctx.Respond(m.Response{
 						Type:        m.MessageResponse,
-						Description: "Failed to create bounty please try again later",
+						Description: "Failed to create poll please try again later",
+						Color:       m.ColorRed,
 					})
 				}
 			} else {
 				return ctx.Respond(m.Response{
 					Type:        m.MessageResponse,
-					Description: "Failed to create bounty please try again later",
+					Description: "Failed to create poll please try again later",
+					Color:       m.ColorRed,
 				})
 			}
 		}
 
 		button := m.ResponseButton{
-			Style:     m.PrimaryButtonStyle,
-			Label:     "Submit",
-			ReactData: fmt.Sprintf(bountySubmitReactData, bountyID),
+			Style: m.PrimaryButtonStyle,
+			Label: "Claim",
+			ReactData: fmt.Sprintf(bountySubmitReactData, ctx.GuildID(),
+				ctx.ChannelID(), ctx.UserID(), bountyID),
 		}
 
 		return ctx.Respond(m.Response{
@@ -118,25 +118,28 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 		})
 	} else if ctx.Message() != nil {
 		msg := strings.Split(ctx.Message().Reaction, "-")
-		reactType := msg[1]
-		userID := msg[2]
+		reactType, reactData := msg[1], msg[2:]
 
 		switch reactType {
 		case "submit":
+			guildID, channelID, userID, bountyID := reactData[0], reactData[1], reactData[2], reactData[3]
+
 			err := ctx.Respond(m.Response{
 				Type:        m.DMResponse,
 				UserID:      userID,
-				Description: fmt.Sprintf("Did <@%s> do it?", ctx.UserID()),
+				Description: fmt.Sprintf("Did <@%s> complete the bounty 'insert title'?", ctx.UserID()),
 				Buttons: []m.ResponseButton{
 					{
-						Style:     m.PrimaryButtonStyle,
-						Label:     "Yes",
-						ReactData: fmt.Sprintf(bountyAcceptReactData, ctx.Message().ID),
+						Style: m.PrimaryButtonStyle,
+						Label: "Yes",
+						ReactData: fmt.Sprintf(bountyAcceptReactData, guildID, channelID,
+							ctx.UserID(), ctx.Message().ID, bountyID),
 					},
 					{
-						Style:     m.SecondaryButtonStyle,
-						Label:     "No",
-						ReactData: fmt.Sprintf(bountyDenyReactData, ctx.Message().ID),
+						Style: m.SecondaryButtonStyle,
+						Label: "No",
+						ReactData: fmt.Sprintf(bountyDenyReactData, guildID, channelID,
+							ctx.UserID(), ctx.Message().ID, bountyID),
 					},
 				},
 			})
@@ -145,11 +148,30 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 			}
 
 		case "accept":
+			guildID, channelID, userID, messageID := reactData[0], reactData[1], reactData[2], reactData[3]
+			bountyID := reactData[4]
 
-			err := ctx.Respond(m.Response{
-				Type: m.MessageEditResponse,
-				MessageID: ctx.Message().ID,
-				GuildID: ctx.Message()
+			client := cmd.createDbClient()
+			title, _, _, err := client.GetBounty(bountyID)
+			if err != nil {
+				return err
+			}
+
+			err = ctx.Respond(m.Response{
+				Type:        m.MessageEditResponse,
+				MessageID:   messageID,
+				GuildID:     guildID,
+				ChannelID:   channelID,
+				Title:       fmt.Sprintf("Bounty: %s", title),
+				Description: fmt.Sprintf("Claimed by <@%s>", userID),
+			})
+			if err != nil {
+				return err
+			}
+
+			return ctx.Respond(m.Response{
+				Type:        m.MessageEditResponse,
+				Description: fmt.Sprintf("You confirmed <@%s> as completing bounty: '%s'", userID, title),
 			})
 
 		case "deny":

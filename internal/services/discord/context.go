@@ -138,7 +138,14 @@ func (c *DiscordContext) Respond(resp m.Response) error {
 		}
 
 	case m.DMResponse:
-		dmChannel, err := c.session.UserChannelCreate(c.userID)
+		var userID string
+		if resp.UserID != "" {
+			userID = resp.UserID
+		} else {
+			userID = c.userID
+		}
+
+		dmChannel, err := c.session.UserChannelCreate(userID)
 		if err != nil {
 			return err
 		}
@@ -156,15 +163,10 @@ func (c *DiscordContext) Respond(resp m.Response) error {
 		}
 
 		if c.interact != nil {
-			interactResp := &dg.InteractionResponse{
-				Type: dg.InteractionResponseChannelMessageWithSource,
-				Data: &dg.InteractionResponseData{
-					Content: "Check your DMs",
-					Flags:   uint64(dg.MessageFlagsEphemeral),
-				},
-			}
-
-			err = c.session.InteractionRespond(c.interact, interactResp)
+			err = c.session.InteractionRespond(c.interact,
+				&dg.InteractionResponse{
+					Type: dg.InteractionResponseDeferredMessageUpdate,
+				})
 			if err != nil {
 				return err
 			}
@@ -211,9 +213,6 @@ func (c *DiscordContext) Respond(resp m.Response) error {
 				return err
 			}
 
-			if c.interact != nil {
-
-			}
 		} else if c.interact != nil {
 			interactResp := &dg.InteractionResponse{
 				Type: dg.InteractionResponseUpdateMessage,

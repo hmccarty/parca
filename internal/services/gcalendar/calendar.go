@@ -1,4 +1,4 @@
-package calendar
+package gcalendar
 
 import (
 	"encoding/json"

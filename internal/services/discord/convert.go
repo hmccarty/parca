@@ -2,6 +2,7 @@ package discord
 
 import (
 	"errors"
+	"fmt"
 
 	dg "github.com/bwmarrin/discordgo"
 	m "github.com/hmccarty/parca/internal/models"
@@ -100,6 +101,7 @@ func emojiToComponentEmoji(emoji m.Emoji) dg.ComponentEmoji {
 
 func buttonsToComponent(buttons []m.ResponseButton) (dg.MessageComponent, error) {
 	if buttons == nil {
+		fmt.Println("true")
 		return nil, nil
 	}
 

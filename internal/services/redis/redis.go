@@ -30,7 +30,7 @@ const (
 	pollYesVoteKey = "poll:%s:yes"
 	pollNoVoteKey  = "poll:%s:no"
 
-	bountyDescKey = "bounty:%s:desc"
+	bountyKey = "bounty:%s"
 )
 
 func OpenRedisClient(config *c.Config) m.DbClient {
@@ -255,7 +255,7 @@ func (r *RedisClient) GetPollVote(pollID string) (int, int, error) {
 	yesKey := fmt.Sprintf(pollYesVoteKey, pollID)
 	yesUsers, err := r.client.SMembers(ctx, yesKey).Result()
 	if err != nil {
-		return 0, 0, m.ErrorPollIDDoesntExists
+		return 0, 0, m.ErrorPollIDDoesntExist
 	}
 
 	noKey := fmt.Sprintf(pollNoVoteKey, pollID)
@@ -267,22 +267,28 @@ func (r *RedisClient) GetPollVote(pollID string) (int, int, error) {
 	return len(yesUsers), len(noUsers), nil
 }
 
-func (r *RedisClient) CreateBounty(bountyDesc, bountyID string) error {
+func (r *RedisClient) CreateBounty(bountyID, title, desc, link string) error {
 	ctx := context.Background()
 
-	descKey := fmt.Sprintf(bountyDescKey, bountyID)
-	_, err := r.client.Get(ctx, descKey).Result()
-	if err == nil {
+	key := fmt.Sprintf(bountyKey, bountyID)
+	if r.client.HLen(ctx, key).Val() > 0 {
 		return m.ErrorBountyIDAlreadyExists
 	}
-	r.client.Set(ctx, descKey, bountyDesc, 0)
 
-	return nil
+	return r.client.HMSet(ctx, key, "title", title, "desc", desc, "link", link).Err()
 }
 
-func (r *RedisClient) GetBountyDesc(bountyID string) (string, error) {
+func (r *RedisClient) GetBounty(bountyID string) (string, string, string, error) {
 	ctx := context.Background()
 
-	descKey := fmt.Sprintf(bountyDescKey, bountyID)
-	return r.client.Get(ctx, descKey).Result()
+	key := fmt.Sprintf(bountyKey, bountyID)
+	values, err := r.client.HMGet(ctx, key,
+		"title", "desc", "link").Result()
+	if err != nil {
+		return "", "", "", err
+	} else if len(values) != 3 {
+		return "", "", "", m.ErrorBountyIDMissingValues
+	}
+
+	return values[0].(string), values[1].(string), values[2].(string), nil
 }
