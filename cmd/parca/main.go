@@ -8,12 +8,14 @@ import (
 	"syscall"
 
 	gencmd "github.com/hmccarty/parca/internal/commands/general"
+	vercmd "github.com/hmccarty/parca/internal/commands/verify"
 	events "github.com/hmccarty/parca/internal/events/onmessage"
 
 	"github.com/hmccarty/parca/internal/models"
 	"github.com/hmccarty/parca/internal/services/config"
 	"github.com/hmccarty/parca/internal/services/discord"
 	"github.com/hmccarty/parca/internal/services/redis"
+	"github.com/hmccarty/parca/internal/services/smtp"
 )
 
 func main() {
@@ -26,10 +28,10 @@ func main() {
 	// scheduler.Start()
 
 	// calendarClient := gcalendar.NewGoogleCalendarClient(conf)
-	// smtpClient, err := smtp.NewSMTPClient(conf)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+	smtpClient, err := smtp.NewSMTPClient(conf)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	createDbClient := func() models.DbClient {
 		return redis.OpenRedisClient(conf)
@@ -59,8 +61,8 @@ func main() {
 		// calcmd.NewWeekCommand(createDbClient, calendarClient),
 
 		// Verification Commands
-		// vercmd.NewConfigureVerifyCommand(conf.ModIDs, createDbClient),
-		// vercmd.NewVerifyCommand(createDbClient, smtpClient),
+		vercmd.NewConfigureVerifyCommand(conf.ModIDs, createDbClient),
+		vercmd.NewVerifyCommand(createDbClient, smtpClient),
 	}
 
 	var eventList = []models.Event{

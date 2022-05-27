@@ -42,7 +42,6 @@ func (event *VerifyOnMessageEvent) Handle(ctx m.EventContext) error {
 		return ctx.Respond(m.Response{
 			Type:        m.MessageResponse,
 			Description: "Invalid code",
-			Color:       m.ColorRed,
 		})
 	}
 
@@ -68,6 +67,5 @@ func (event *VerifyOnMessageEvent) Handle(ctx m.EventContext) error {
 		GuildID:     guildID,
 		ChannelID:   ctx.ChannelID(),
 		Description: fmt.Sprintf("You have been verified on %s", guildName),
-		Color:       m.ColorGreen,
 	})
 }

@@ -43,7 +43,7 @@ func (*ConfigureVerify) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *ConfigureVerify) Run(ctx m.CommandContext) error {
+func (cmd *ConfigureVerify) Run(ctx m.ChatContext) error {
 	if len(ctx.Options()) != 2 {
 		return m.ErrMissingOptions
 	}
@@ -57,9 +57,8 @@ func (cmd *ConfigureVerify) Run(ctx m.CommandContext) error {
 	}
 	if !isMod {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Only bot moderators can use this command",
-			Color:       m.ColorRed,
 		})
 	}
 
@@ -71,9 +70,8 @@ func (cmd *ConfigureVerify) Run(ctx m.CommandContext) error {
 	valid, err := regexp.MatchString(`\b[0-9A-Za-z]+\.[0-9A-Za-z]+\b`, domain)
 	if err != nil || !valid {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Invalid domain, should be URL-like (e.g. `purdue.edu`)",
-			Color:       m.ColorRed,
 		})
 	}
 
@@ -86,15 +84,13 @@ func (cmd *ConfigureVerify) Run(ctx m.CommandContext) error {
 	err = client.AddVerifyConfig(domain, roleID, ctx.GuildID())
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Failed to update verification configuration",
-			Color:       m.ColorRed,
 		})
 	}
 
 	return ctx.Respond(m.Response{
-		Type:        m.MessageResponse,
+		Type:        m.AckResponse,
 		Description: "Configuration updated",
-		Color:       m.ColorGreen,
 	})
 }

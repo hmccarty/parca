@@ -39,7 +39,7 @@ func (*Verify) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *Verify) Run(ctx m.CommandContext) error {
+func (cmd *Verify) Run(ctx m.ChatContext) error {
 	if len(ctx.Options()) != 1 {
 		return m.ErrMissingOptions
 	}
@@ -63,9 +63,9 @@ func (cmd *Verify) Run(ctx m.CommandContext) error {
 		invalidMsg := fmt.Sprintf("Invalid email, ensure you use an email with a `%s` domain",
 			domain)
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
+			IsEphemeral: true,
 			Description: invalidMsg,
-			Color:       m.ColorRed,
 		})
 	}
 
@@ -75,14 +75,20 @@ func (cmd *Verify) Run(ctx m.CommandContext) error {
 	err = client.AddVerifyCode(code, ctx.UserID(), ctx.GuildID())
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
+			IsEphemeral: true,
 			Description: "Failed to save code, try again later",
-			Color:       m.ColorRed,
 		})
 	}
 
+	err = ctx.Respond(m.Response{
+		Type:        m.AckResponse,
+		Description: "Check your DMs",
+		IsEphemeral: true,
+	})
+
 	return ctx.Respond(m.Response{
-		Type:        m.DMAuthorResponse,
+		Type:        m.DMResponse,
 		Description: "Respond with the code sent to your email here",
 	})
 }
