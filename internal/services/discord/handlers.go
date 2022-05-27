@@ -23,6 +23,8 @@ func setCmdHandler(client *DiscordClient, cmds []m.Command) error {
 			case dg.InteractionMessageComponent:
 				// TODO: Error check
 				name = strings.Split(i.MessageComponentData().CustomID, "-")[0]
+			case dg.InteractionModalSubmit:
+				name = strings.Split(i.ModalSubmitData().CustomID, "-")[0]
 			}
 
 			if cmd, ok := cmdHandlers[name]; ok {

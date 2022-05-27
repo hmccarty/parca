@@ -2,14 +2,14 @@ package discord
 
 import (
 	"errors"
-	"fmt"
 
 	dg "github.com/bwmarrin/discordgo"
 	m "github.com/hmccarty/parca/internal/models"
 )
 
 var (
-	ErrOptionTypeNotSupported = errors.New("option type is not supported")
+	ErrComponentTypeNotSupported = errors.New("component type is not supported")
+	ErrOptionTypeNotSupported    = errors.New("option type is not supported")
 )
 
 func cmdToApp(cmd m.Command) (*dg.ApplicationCommand, error) {
@@ -64,6 +64,45 @@ func cmdOptTypeToDiscordOpt(optType m.CommandOptionType) (dg.ApplicationCommandO
 	}
 }
 
+func componentsToCmdOpts(components []dg.MessageComponent) ([]m.CommandOption, error) {
+	var opts []m.CommandOption
+
+	for _, component := range components {
+		switch component.Type() {
+		case dg.ActionsRowComponent:
+			nestedComponents, err := componentsToCmdOpts(component.(*dg.ActionsRow).Components)
+			if err != nil {
+				return nil, err
+			}
+
+			opts = append(opts, nestedComponents...)
+		case dg.ButtonComponent:
+			buttonComponent := component.(*dg.Button)
+			opts = append(opts, m.CommandOption{
+				Metadata: m.CommandOptionMetadata{
+					Type: m.BooleanOption,
+					Name: buttonComponent.Label,
+				},
+				Value: buttonComponent.Disabled,
+			})
+		case dg.TextInputComponent:
+			inputComponent := component.(*dg.TextInput)
+			opts = append(opts, m.CommandOption{
+				Metadata: m.CommandOptionMetadata{
+					Type: m.StringOption,
+					Name: inputComponent.Label,
+				},
+				Value: inputComponent.Value,
+			})
+		default:
+			return nil, ErrComponentTypeNotSupported
+		}
+		opts = append(opts, m.CommandOption{})
+	}
+
+	return opts, nil
+}
+
 func discordOptTypeToCmdOpt(optType dg.ApplicationCommandOptionType) (m.CommandOptionType, error) {
 	switch optType {
 	case dg.ApplicationCommandOptionString:
@@ -99,9 +138,21 @@ func emojiToComponentEmoji(emoji m.Emoji) dg.ComponentEmoji {
 	return dg.ComponentEmoji{}
 }
 
+func inputToComponent(input m.ResponseInput) (dg.MessageComponent, error) {
+	return dg.ActionsRow{
+		Components: []dg.MessageComponent{
+			dg.TextInput{
+				Style:    dg.TextInputStyle(input.Style),
+				Label:    input.Label,
+				Required: input.Required,
+				CustomID: input.CustomID,
+			},
+		},
+	}, nil
+}
+
 func buttonsToComponent(buttons []m.ResponseButton) (dg.MessageComponent, error) {
 	if buttons == nil {
-		fmt.Println("true")
 		return nil, nil
 	}
 

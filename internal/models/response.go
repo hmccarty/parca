@@ -7,12 +7,18 @@ type Response struct {
 	UserID    string
 	MessageID string
 	Color     int
+	IsForm    bool
 
 	// Message responses
+	IsEphemeral bool
 	URL         string
 	Title       string
 	Description string
 	Buttons     []ResponseButton
+
+	// Form responses
+	CustomID string
+	Inputs   []ResponseInput
 
 	// Role responses
 	RoleID string
@@ -22,10 +28,11 @@ type ResponseType uint8
 
 const (
 	MessageResponse     ResponseType = 0
-	DMResponse          ResponseType = 1
-	AddRoleResponse     ResponseType = 2
-	RemoveRoleResponse  ResponseType = 3
-	MessageEditResponse ResponseType = 4
+	AckResponse         ResponseType = 1
+	DMResponse          ResponseType = 2
+	AddRoleResponse     ResponseType = 3
+	RemoveRoleResponse  ResponseType = 4
+	MessageEditResponse ResponseType = 5
 )
 
 type ResponseButton struct {
@@ -42,6 +49,20 @@ const (
 	PrimaryButtonStyle   ResponseButtonStyle = 1
 	SecondaryButtonStyle ResponseButtonStyle = 2
 	LinkButtonStyle      ResponseButtonStyle = 3
+)
+
+type ResponseInput struct {
+	Style    ResponseInputStyle
+	Label    string
+	Required bool
+	CustomID string
+}
+
+type ResponseInputStyle uint8
+
+const (
+	ShortInputStyle     ResponseInputStyle = 1
+	ParagraphInputStyle ResponseInputStyle = 2
 )
 
 type Emoji uint8

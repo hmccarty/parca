@@ -20,7 +20,7 @@ var (
 func createCtx(
 	session *dg.Session,
 	interact *dg.Interaction,
-	cmd m.Command) (m.CommandContext, error) {
+	cmd m.Command) (m.ChatContext, error) {
 
 	var userID string
 	if interact.User != nil {
@@ -31,10 +31,14 @@ func createCtx(
 		return nil, ErrNoUser
 	}
 
+	var contextType m.ChatContextType
 	var opts []m.CommandOption
+	var err error
+	var uniqueID string
 	var message *m.ChatMessage
 	switch interact.Type {
 	case dg.InteractionApplicationCommand:
+		contextType = m.CommandCall
 		message = nil
 
 		appInteractData := interact.ApplicationCommandData()
@@ -52,7 +56,18 @@ func createCtx(
 				Value: opt.Value,
 			})
 		}
+	case dg.InteractionModalSubmit:
+		contextType = m.CommandReply
+		message = nil
+
+		modalData := interact.ModalSubmitData()
+		uniqueID = modalData.CustomID
+		opts, err = componentsToCmdOpts(modalData.Components)
+		if err != nil {
+			return nil, err
+		}
 	case dg.InteractionMessageComponent:
+		contextType = m.CommandReply
 		messageID := ""
 		content := ""
 		if interact.Message != nil {
@@ -71,70 +86,53 @@ func createCtx(
 	}
 
 	return &DiscordContext{
-		session:   session,
-		interact:  interact,
-		guildID:   interact.GuildID,
-		userID:    userID,
-		channelID: interact.ChannelID,
-		options:   opts,
-		message:   message,
+		contextType: contextType,
+		session:     session,
+		interact:    interact,
+		guildID:     interact.GuildID,
+		userID:      userID,
+		channelID:   interact.ChannelID,
+		uniqueID:    uniqueID,
+		options:     opts,
+		message:     message,
 	}, nil
 }
 
 type DiscordContext struct {
-	session  *dg.Session
-	interact *dg.Interaction
+	contextType m.ChatContextType
+	session     *dg.Session
+	interact    *dg.Interaction
 
 	guildID   string
 	userID    string
 	channelID string
 	messageID string
+	uniqueID  string
 
 	options []m.CommandOption
 	message *m.ChatMessage
 }
 
+func (c *DiscordContext) Type() m.ChatContextType {
+	return c.contextType
+}
+
 func (c *DiscordContext) Respond(resp m.Response) error {
 	switch resp.Type {
 	case m.MessageResponse:
-		if resp.ChannelID != "" {
-			_, err := c.session.ChannelMessageSendComplex(resp.ChannelID,
-				&dg.MessageSend{
-					Embeds: []*dg.MessageEmbed{
-						getEmbed(resp),
-					},
-					Components: getComponents(resp),
-				})
-			if err != nil {
-				return err
-			}
-
-			if c.interact != nil {
-				err = c.session.InteractionRespond(c.interact,
-					&dg.InteractionResponse{
-						Type: dg.InteractionResponseDeferredChannelMessageWithSource,
-					})
-				if err != nil {
-					return err
-				}
-			}
-		} else if c.interact != nil {
-			interactResp := &dg.InteractionResponse{
-				Type: dg.InteractionResponseChannelMessageWithSource,
-				Data: &dg.InteractionResponseData{
-					Embeds: []*dg.MessageEmbed{
-						getEmbed(resp),
-					},
-					Components: getComponents(resp),
-				},
-			}
-
-			err := c.session.InteractionRespond(c.interact, interactResp)
-			if err != nil {
-				return err
-			}
-		} else {
+		if resp.ChannelID == "" {
 			return ErrNoChannelID
+		}
+
+		_, err := c.session.ChannelMessageSendComplex(resp.ChannelID, getMessage(resp))
+		if err != nil {
+			return err
+		}
+
+	case m.AckResponse:
+		err := c.session.InteractionRespond(c.interact, getInteraction(resp))
+		if err != nil {
+			return err
 		}
 
 	case m.DMResponse:
@@ -150,26 +148,9 @@ func (c *DiscordContext) Respond(resp m.Response) error {
 			return err
 		}
 
-		_, err = c.session.ChannelMessageSendComplex(dmChannel.ID,
-			&dg.MessageSend{
-				Embeds: []*dg.MessageEmbed{
-					getEmbed(resp),
-				},
-				Components: getComponents(resp),
-			},
-		)
+		_, err = c.session.ChannelMessageSendComplex(dmChannel.ID, getMessage(resp))
 		if err != nil {
 			return err
-		}
-
-		if c.interact != nil {
-			err = c.session.InteractionRespond(c.interact,
-				&dg.InteractionResponse{
-					Type: dg.InteractionResponseDeferredMessageUpdate,
-				})
-			if err != nil {
-				return err
-			}
 		}
 
 	case m.AddRoleResponse:
@@ -178,59 +159,27 @@ func (c *DiscordContext) Respond(resp m.Response) error {
 			return err
 		}
 
-		if c.interact != nil {
-			interactResp := &dg.InteractionResponse{
-				Type: dg.InteractionResponseChannelMessageWithSource,
-				Data: &dg.InteractionResponseData{
-					Content: "Role updated",
-					Flags:   uint64(dg.MessageFlagsEphemeral),
-				},
-			}
-
-			err = c.session.InteractionRespond(c.interact, interactResp)
-			if err != nil {
-				return err
-			}
-		}
-
 	case m.MessageEditResponse:
-		if resp.MessageID != "" {
-			if resp.ChannelID == "" {
-				return ErrNoChannelID
-			}
-
-			_, err := c.session.ChannelMessageEditComplex(
-				&dg.MessageEdit{
-					Components: getComponents(resp),
-					ID:         resp.MessageID,
-					Channel:    resp.ChannelID,
-					Embeds: []*dg.MessageEmbed{
-						getEmbed(resp),
-					},
-				},
-			)
-			if err != nil {
-				return err
-			}
-
-		} else if c.interact != nil {
-			interactResp := &dg.InteractionResponse{
-				Type: dg.InteractionResponseUpdateMessage,
-				Data: &dg.InteractionResponseData{
-					Embeds: []*dg.MessageEmbed{
-						getEmbed(resp),
-					},
-					Components: getComponents(resp),
-				},
-			}
-
-			err := c.session.InteractionRespond(c.interact, interactResp)
-			if err != nil {
-				return err
-			}
-		} else {
+		if resp.MessageID == "" {
 			return ErrNoMessageID
+		} else if resp.ChannelID == "" {
+			return ErrNoChannelID
 		}
+
+		_, err := c.session.ChannelMessageEditComplex(
+			&dg.MessageEdit{
+				Components: getComponents(resp),
+				ID:         resp.MessageID,
+				Channel:    resp.ChannelID,
+				Embeds: []*dg.MessageEmbed{
+					getEmbed(resp),
+				},
+			},
+		)
+		if err != nil {
+			return err
+		}
+
 	default:
 		return fmt.Errorf("%v: type: %d", ErrUnsupportedResponse, resp.Type)
 	}
@@ -251,6 +200,10 @@ func (c *DiscordContext) ChannelID() string {
 
 func (c *DiscordContext) MessageID() string {
 	return c.messageID
+}
+
+func (c *DiscordContext) UniqueID() string {
+	return c.uniqueID
 }
 
 func (c *DiscordContext) Options() []m.CommandOption {

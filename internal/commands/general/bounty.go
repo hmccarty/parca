@@ -164,6 +164,7 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 				ChannelID:   channelID,
 				Title:       fmt.Sprintf("Bounty: %s", title),
 				Description: fmt.Sprintf("Claimed by <@%s>", userID),
+				Color:       m.ColorGreen,
 			})
 			if err != nil {
 				return err
@@ -175,6 +176,18 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 			})
 
 		case "deny":
+			userID, bountyID := reactData[2], reactData[4]
+
+			client := cmd.createDbClient()
+			title, _, _, err := client.GetBounty(bountyID)
+			if err != nil {
+				return err
+			}
+
+			return ctx.Respond(m.Response{
+				Type:        m.MessageEditResponse,
+				Description: fmt.Sprintf("You rejected <@%s> as completing bounty: '%s'", userID, title),
+			})
 		}
 
 		return nil

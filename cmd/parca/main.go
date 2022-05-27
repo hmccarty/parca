@@ -22,6 +22,9 @@ func main() {
 		fmt.Println(err)
 	}
 
+	// scheduler := cron.New()
+	// scheduler.Start()
+
 	// calendarClient := gcalendar.NewGoogleCalendarClient(conf)
 	// smtpClient, err := smtp.NewSMTPClient(conf)
 	// if err != nil {
@@ -38,6 +41,8 @@ func main() {
 		gencmd.NewRoleMenuCommand(),
 		gencmd.NewPollCommand(createDbClient),
 		gencmd.NewBountyCommand(createDbClient),
+		gencmd.NewRemindCommand(),
+		gencmd.NewEmbedCommand(),
 
 		// Currency Commands
 		// curcmd.NewBalanceCommand(createDbClient),
@@ -71,5 +76,6 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
+	// scheduler.Stop()
 	session.Close()
 }

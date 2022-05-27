@@ -2,6 +2,12 @@
 
 Replacement for the former ARC assistant.
 
+## TODO
+
+- Refactor responses to be deterministic using types (e.g. don't allow client to make assumptions about interaction response vs. unprompted msg)
+- Fix rules on bounty and reward
+- Cache reminders in case of poweroff
+
 ## Commands
 
 Currency:
@@ -38,7 +44,7 @@ Games:
 
 - arcdle ( )
 - daily ( )
-- bounty ( )
+- bounty (X)
 
 ## REDIS Structure
 

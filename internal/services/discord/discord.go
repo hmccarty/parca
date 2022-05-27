@@ -54,6 +54,9 @@ type DiscordClient struct {
 	registeredApplications []*dg.ApplicationCommand
 }
 
+func (d *DiscordClient) ExecPeriodically(p time.Duration, quit chan struct{}) {
+}
+
 func (d *DiscordClient) ExecHourly(quit chan struct{}) {
 	ticker := time.NewTicker(time.Hour)
 	for {
