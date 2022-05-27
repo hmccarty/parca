@@ -97,7 +97,6 @@ func componentsToCmdOpts(components []dg.MessageComponent) ([]m.CommandOption, e
 		default:
 			return nil, ErrComponentTypeNotSupported
 		}
-		opts = append(opts, m.CommandOption{})
 	}
 
 	return opts, nil
