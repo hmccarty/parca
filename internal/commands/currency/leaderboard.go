@@ -28,12 +28,12 @@ func (*Leaderboard) Options() []m.CommandOptionMetadata {
 	return nil
 }
 
-func (cmd *Leaderboard) Run(ctx m.CommandContext) error {
+func (cmd *Leaderboard) Run(ctx m.ChatContext) error {
 	client := cmd.createDbClient()
 	balances, err := client.GetBalancesFromGuild(ctx.GuildID())
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Everybody is broke",
 		})
 	}
@@ -44,7 +44,7 @@ func (cmd *Leaderboard) Run(ctx m.CommandContext) error {
 			i+1, balance.UserID, balance.Balance)
 	}
 	return ctx.Respond(m.Response{
-		Type:        m.MessageResponse,
+		Type:        m.AckResponse,
 		Title:       "Leaderboard",
 		Description: msg,
 	})

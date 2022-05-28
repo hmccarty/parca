@@ -41,7 +41,7 @@ func (*Pay) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *Pay) Run(ctx m.CommandContext) error {
+func (cmd *Pay) Run(ctx m.ChatContext) error {
 	if len(ctx.Options()) != 2 {
 		return m.ErrMissingOptions
 	}
@@ -54,13 +54,13 @@ func (cmd *Pay) Run(ctx m.CommandContext) error {
 	amount, err := ctx.Options()[1].ToFloat()
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: fmt.Sprintf("Failed to get balance of <@%s>", senderID),
 			Color:       m.ColorRed,
 		})
 	} else if senderBalance < amount {
 		return ctx.Respond(m.Response{
-			Type: m.MessageResponse,
+			Type: m.AckResponse,
 			Description: fmt.Sprintf("Insufficient funds, you have %.2f coins and %.2f are required",
 				senderBalance, amount),
 			Color: m.ColorRed,
@@ -70,13 +70,13 @@ func (cmd *Pay) Run(ctx m.CommandContext) error {
 	receiverID, err := ctx.Options()[0].ToUser()
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Failed to find other user",
 			Color:       m.ColorRed,
 		})
 	} else if senderID == receiverID {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "You can't pay yourself",
 			Color:       m.ColorRed,
 		})
@@ -85,7 +85,7 @@ func (cmd *Pay) Run(ctx m.CommandContext) error {
 	receiverBalance, err := client.GetUserBalance(receiverID)
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: fmt.Sprintf("Failed to get balance of <@%s>", receiverID),
 			Color:       m.ColorRed,
 		})
@@ -94,7 +94,7 @@ func (cmd *Pay) Run(ctx m.CommandContext) error {
 	client.SetUserBalance(senderID, ctx.GuildID(), senderBalance-amount)
 	client.SetUserBalance(receiverID, ctx.GuildID(), receiverBalance+amount)
 	return ctx.Respond(m.Response{
-		Type:        m.MessageResponse,
+		Type:        m.AckResponse,
 		Description: fmt.Sprintf("Paid <@%s> %.2f ARC coins", receiverID, amount),
 		Color:       m.ColorGreen,
 	})

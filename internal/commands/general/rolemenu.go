@@ -35,6 +35,12 @@ func (*RoleMenu) Options() []m.CommandOptionMetadata {
 			Required:    true,
 		},
 		{
+			Name:        "channel",
+			Description: "Channel to create role menu in",
+			Type:        m.ChannelOption,
+			Required:    true,
+		},
+		{
 			Name:        "role1",
 			Description: "Role to displayed on menu",
 			Type:        m.RoleOption,
@@ -76,8 +82,13 @@ func (*RoleMenu) Run(ctx m.ChatContext) error {
 			return err
 		}
 
-		buttons := make([]m.ResponseButton, len(opts[1:]))
-		for i, opt := range opts[1:] {
+		channel, err := opts[1].ToChannel()
+		if err != nil {
+			return err
+		}
+
+		buttons := make([]m.ResponseButton, len(opts[2:]))
+		for i, opt := range opts[2:] {
 			roleID, err := opt.ToRole()
 			if err != nil {
 				return err
@@ -92,22 +103,41 @@ func (*RoleMenu) Run(ctx m.ChatContext) error {
 			}
 		}
 
-		return ctx.Respond(m.Response{
+		err = ctx.Respond(m.Response{
 			Type:        m.MessageResponse,
+			ChannelID:   channel,
 			Title:       fmt.Sprintf("%s Role Menu", title),
 			Description: "Click the buttons below to add role",
 			Buttons:     buttons,
+		})
+		if err != nil {
+			return err
+		}
+
+		return ctx.Respond(m.Response{
+			Type:        m.AckResponse,
+			Description: "Role menu created",
+			IsEphemeral: true,
 		})
 	} else if ctx.Message() != nil {
 		// If a command response has a reaction
 		msg := ctx.Message()
 		roleID := strings.Split(msg.Reaction, "-")[1]
 
-		return ctx.Respond(m.Response{
+		err := ctx.Respond(m.Response{
 			Type:    m.AddRoleResponse,
 			GuildID: ctx.GuildID(),
 			UserID:  ctx.UserID(),
 			RoleID:  roleID,
+		})
+		if err != nil {
+			return err
+		}
+
+		return ctx.Respond(m.Response{
+			Type:        m.AckResponse,
+			Description: fmt.Sprintf("Added you to <@&%s>", roleID),
+			IsEphemeral: true,
 		})
 	}
 

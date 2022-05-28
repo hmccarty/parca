@@ -40,7 +40,7 @@ func (*Thanks) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *Thanks) Run(ctx m.CommandContext) error {
+func (cmd *Thanks) Run(ctx m.ChatContext) error {
 	if len(ctx.Options()) == 2 {
 		return m.ErrMissingOptions
 	}
@@ -51,13 +51,13 @@ func (cmd *Thanks) Run(ctx m.CommandContext) error {
 	senderBalance, err := client.GetUserBalance(senderID)
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: fmt.Sprintf("Failed to get balance of <@%s>", senderID),
 			Color:       m.ColorRed,
 		})
 	} else if senderBalance < txnFee {
 		return ctx.Respond(m.Response{
-			Type: m.MessageResponse,
+			Type: m.AckResponse,
 			Description: fmt.Sprintf("Insufficient funds, you have %.2f coins and %.2f are required",
 				senderBalance, txnFee),
 			Color: m.ColorRed,
@@ -71,7 +71,7 @@ func (cmd *Thanks) Run(ctx m.CommandContext) error {
 
 	if senderID == receiverID {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "You can't thank yourself",
 			Color:       m.ColorRed,
 		})
@@ -80,7 +80,7 @@ func (cmd *Thanks) Run(ctx m.CommandContext) error {
 	receiverBalance, err := client.GetUserBalance(receiverID)
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: fmt.Sprintf("Failed to get balance of <@%s>", receiverID),
 			Color:       m.ColorRed,
 		})
@@ -89,7 +89,7 @@ func (cmd *Thanks) Run(ctx m.CommandContext) error {
 	client.SetUserBalance(senderID, ctx.GuildID(), senderBalance-txnFee)
 	client.SetUserBalance(receiverID, ctx.GuildID(), receiverBalance+amount)
 	return ctx.Respond(m.Response{
-		Type: m.MessageResponse,
+		Type: m.AckResponse,
 		Description: fmt.Sprintf("<@%s> thanked <@%s> with %.2f ARC coins",
 			senderID, receiverID, amount),
 		Color: m.ColorGreen,

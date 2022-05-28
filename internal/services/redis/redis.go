@@ -165,7 +165,7 @@ func (r *RedisClient) GetVerifyConfig(guildID string) (string, string, error) {
 	value, err := r.client.HMGet(ctx, key, "domain", "roleID").Result()
 	if err != nil {
 		return "", "", err
-	} else if len(value) != 2 {
+	} else if value[0] == nil || value[1] == nil {
 		return "", "", errors.New("failed to collect from redis")
 	}
 

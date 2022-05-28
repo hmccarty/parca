@@ -1,0 +1,14 @@
+# Commands
+mod_ids:
+  - "<user id>"
+
+# Discord
+discord_token: "Bot <Discord bot token>"
+discord_app_id: "<App ID>"
+discord_guild_id: ""
+
+# SMTP
+smtp_email: ""
+smtp_password: ""
+smtp_server: ""
+smtp_port: 

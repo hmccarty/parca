@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	curcmd "github.com/hmccarty/parca/internal/commands/currency"
 	gencmd "github.com/hmccarty/parca/internal/commands/general"
 	vercmd "github.com/hmccarty/parca/internal/commands/verify"
 	events "github.com/hmccarty/parca/internal/events/onmessage"
@@ -21,7 +21,7 @@ import (
 func main() {
 	conf, err := config.NewConfig("config/main.yml")
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
 	// scheduler := cron.New()
@@ -30,7 +30,7 @@ func main() {
 	// calendarClient := gcalendar.NewGoogleCalendarClient(conf)
 	smtpClient, err := smtp.NewSMTPClient(conf)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
 	createDbClient := func() models.DbClient {
@@ -47,11 +47,11 @@ func main() {
 		gencmd.NewEmbedCommand(),
 
 		// Currency Commands
-		// curcmd.NewBalanceCommand(createDbClient),
-		// curcmd.NewSetBalanceCommand(conf.ModIDs, createDbClient),
-		// curcmd.NewLeaderboardCommand(createDbClient),
-		// curcmd.NewThanksCommand(createDbClient),
-		// curcmd.NewPayCommand(createDbClient),
+		curcmd.NewBalanceCommand(createDbClient),
+		curcmd.NewSetBalanceCommand(conf.ModIDs, createDbClient),
+		curcmd.NewLeaderboardCommand(createDbClient),
+		curcmd.NewThanksCommand(createDbClient),
+		curcmd.NewPayCommand(createDbClient),
 
 		// Calendar Commands
 		// calcmd.NewAddCalendarCommand(createDbClient, calendarClient),

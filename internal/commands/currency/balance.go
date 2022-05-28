@@ -35,7 +35,7 @@ func (*Balance) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *Balance) Run(ctx m.CommandContext) error {
+func (cmd *Balance) Run(ctx m.ChatContext) error {
 	var userID, userPrompt string
 	var err error
 	if len(ctx.Options()) == 1 {
@@ -57,7 +57,7 @@ func (cmd *Balance) Run(ctx m.CommandContext) error {
 	client := cmd.createDbClient()
 	balance, _ := client.GetUserBalance(userID)
 	return ctx.Respond(m.Response{
-		Type: m.MessageResponse,
+		Type: m.AckResponse,
 		Description: fmt.Sprintf("%s **%.2f** ARC coins",
 			userPrompt, balance),
 	})

@@ -43,7 +43,7 @@ func (*SetBalance) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *SetBalance) Run(ctx m.CommandContext) error {
+func (cmd *SetBalance) Run(ctx m.ChatContext) error {
 	if len(ctx.Options()) != 2 {
 		return m.ErrMissingOptions
 	}
@@ -57,7 +57,7 @@ func (cmd *SetBalance) Run(ctx m.CommandContext) error {
 	}
 	if !isMod {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Only bot moderators can use this command",
 			Color:       m.ColorRed,
 		})
@@ -77,7 +77,7 @@ func (cmd *SetBalance) Run(ctx m.CommandContext) error {
 	client.SetUserBalance(userID, ctx.GuildID(), amount)
 	balance, _ := client.GetUserBalance(userID)
 	return ctx.Respond(m.Response{
-		Type: m.MessageResponse,
+		Type: m.AckResponse,
 		Description: fmt.Sprintf("Set <@%s>'s balance to %.2f",
 			userID, balance),
 		Color: m.ColorGreen,
