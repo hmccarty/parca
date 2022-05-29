@@ -40,73 +40,124 @@ func (*Verify) Options() []m.CommandOptionMetadata {
 }
 
 func (cmd *Verify) Run(ctx m.ChatContext) error {
-	if len(ctx.Options()) != 1 {
+	opt := ctx.Options()[0]
+	if opt.Metadata.Name == "email" {
+		email, err := ctx.Options()[0].ToString()
+		if err != nil {
+			return err
+		}
+
+		client := cmd.createDbClient()
+		domain, _, err := client.GetVerifyConfig(ctx.GuildID())
+		if err != nil {
+			return ctx.Respond(m.Response{
+				Type:        m.AckResponse,
+				IsEphemeral: true,
+				Description: "Verification not configured for server, contact server admin",
+			})
+		}
+
+		validEmailPattern := fmt.Sprintf(`\b[0-9A-Za-z]+@%s\b`, domain)
+		isValidEmail, err := regexp.MatchString(validEmailPattern, email)
+		if err != nil {
+			return ctx.Respond(m.Response{
+				Type:        m.AckResponse,
+				IsEphemeral: true,
+				Description: "Failed to validate email",
+			})
+		} else if !isValidEmail {
+			invalidMsg := fmt.Sprintf("Invalid email, ensure you use an email with a `%s` domain",
+				domain)
+			return ctx.Respond(m.Response{
+				Type:        m.AckResponse,
+				IsEphemeral: true,
+				Description: invalidMsg,
+			})
+		}
+
+		code := fmt.Sprintf("%d", rand.Intn(6000-1000)+1000)
+		err = cmd.emailClient.SendEmail(email, "Discord Server Verification", code)
+		if err != nil {
+			return ctx.Respond(m.Response{
+				Type:        m.AckResponse,
+				IsEphemeral: true,
+				Description: fmt.Sprintf("Failed to send email: %s", err),
+			})
+		}
+
+		err = client.AddVerifyCode(code, ctx.UserID(), ctx.GuildID())
+		if err != nil {
+			return ctx.Respond(m.Response{
+				Type:        m.AckResponse,
+				IsEphemeral: true,
+				Description: "Failed to save code, try again later",
+			})
+		}
+
+		return ctx.Respond(m.Response{
+			Type:        m.AckResponse,
+			IsForm:      true,
+			Title:       "Server Verification",
+			Description: "Check the entered email for the verification code.",
+			CustomID:    fmt.Sprintf("verify-%s-%s", ctx.GuildID(), ctx.UserID()),
+			Inputs: []m.ResponseInput{
+				{
+					Style:    m.ShortInputStyle,
+					Label:    "Verification Code",
+					Required: true,
+					CustomID: "verify-code",
+				},
+			},
+		})
+	} else if opt.Metadata.Name == "verify-code" {
+		input, err := opt.ToString()
+		if err != nil {
+			return err
+		}
+
+		client := cmd.createDbClient()
+		code, guildID, err := client.GetVerifyCode(ctx.UserID())
+		if err != nil {
+			return err
+		}
+
+		if code == "" {
+			return nil
+		} else if input != code {
+			return ctx.Respond(m.Response{
+				Type:        m.AckResponse,
+				IsEphemeral: true,
+				Description: "Invalid code",
+			})
+		}
+
+		_, roleID, err := client.GetVerifyConfig(guildID)
+		if err != nil {
+			return err
+		}
+
+		err = ctx.Respond(m.Response{
+			Type:    m.AddRoleResponse,
+			GuildID: guildID,
+			UserID:  ctx.UserID(),
+			RoleID:  roleID,
+		})
+		if err != nil {
+			return err
+		}
+
+		guildName, err := ctx.GetGuildNameFromID(guildID)
+		if err != nil {
+			return err
+		}
+
+		return ctx.Respond(m.Response{
+			Type:        m.AckResponse,
+			IsEphemeral: true,
+			Description: fmt.Sprintf("You have been verified on %s", guildName),
+		})
+	} else {
+		fmt.Println(opt.Metadata.Name)
 		return m.ErrMissingOptions
 	}
-
-	email, err := ctx.Options()[0].ToString()
-	if err != nil {
-		return err
-	}
-
-	client := cmd.createDbClient()
-	domain, _, err := client.GetVerifyConfig(ctx.GuildID())
-	if err != nil {
-		return ctx.Respond(m.Response{
-			Type:        m.AckResponse,
-			IsEphemeral: true,
-			Description: "Verification not configured for server, contact server admin",
-		})
-	}
-
-	validEmailPattern := fmt.Sprintf(`\b[0-9A-Za-z]+@%s\b`, domain)
-	isValidEmail, err := regexp.MatchString(validEmailPattern, email)
-	if err != nil {
-		return ctx.Respond(m.Response{
-			Type:        m.AckResponse,
-			IsEphemeral: true,
-			Description: "Failed to validate email",
-		})
-	} else if !isValidEmail {
-		invalidMsg := fmt.Sprintf("Invalid email, ensure you use an email with a `%s` domain",
-			domain)
-		return ctx.Respond(m.Response{
-			Type:        m.AckResponse,
-			IsEphemeral: true,
-			Description: invalidMsg,
-		})
-	}
-
-	code := fmt.Sprintf("%d", rand.Intn(6000-1000)+1000)
-	err = cmd.emailClient.SendEmail(email, "Discord Server Verification", code)
-	if err != nil {
-		return ctx.Respond(m.Response{
-			Type:        m.AckResponse,
-			IsEphemeral: true,
-			Description: fmt.Sprintf("Failed to send email: %s", err),
-		})
-	}
-
-	err = client.AddVerifyCode(code, ctx.UserID(), ctx.GuildID())
-	if err != nil {
-		return ctx.Respond(m.Response{
-			Type:        m.AckResponse,
-			IsEphemeral: true,
-			Description: "Failed to save code, try again later",
-		})
-	}
-
-	err = ctx.Respond(m.Response{
-		Type:        m.AckResponse,
-		Description: "Check your DMs",
-		IsEphemeral: true,
-	})
-	if err != nil {
-		return err
-	}
-
-	return ctx.Respond(m.Response{
-		Type:        m.DMResponse,
-		Description: "Respond with the code sent to your email here",
-	})
 }
