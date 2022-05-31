@@ -37,7 +37,7 @@ func (*AddCalendar) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *AddCalendar) Run(ctx m.CommandContext) error {
+func (cmd *AddCalendar) Run(ctx m.ChatContext) error {
 	if len(ctx.Options()) != 1 {
 		return m.ErrMissingOptions
 	}
@@ -50,9 +50,8 @@ func (cmd *AddCalendar) Run(ctx m.CommandContext) error {
 	calendarData, err := cmd.calendarClient.GetCalendarData(calendarID)
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Failed to get calendar, missing permissions or bad id",
-			Color:       m.ColorRed,
 		})
 	}
 
@@ -60,16 +59,14 @@ func (cmd *AddCalendar) Run(ctx m.CommandContext) error {
 	err = client.AddCalendar(calendarID, ctx.ChannelID(), ctx.GuildID())
 	if err != nil {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Could not add calendar at this time, try again later",
-			Color:       m.ColorRed,
 		})
 	}
 
 	return ctx.Respond(m.Response{
-		Type: m.MessageResponse,
+		Type: m.AckResponse,
 		Description: fmt.Sprintf("Added '%s' calendar to channel",
 			calendarData.Name),
-		Color: m.ColorGreen,
 	})
 }

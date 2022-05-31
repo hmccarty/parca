@@ -6,10 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
+	// calcmd "github.com/hmccarty/parca/internal/commands/calendar"
 	curcmd "github.com/hmccarty/parca/internal/commands/currency"
 	gencmd "github.com/hmccarty/parca/internal/commands/general"
 	vercmd "github.com/hmccarty/parca/internal/commands/verify"
-	events "github.com/hmccarty/parca/internal/events/onmessage"
 
 	"github.com/hmccarty/parca/internal/models"
 	"github.com/hmccarty/parca/internal/services/config"
@@ -65,11 +65,8 @@ func main() {
 		vercmd.NewVerifyCommand(createDbClient, smtpClient),
 	}
 
-	var eventList = []models.Event{
-		events.NewVerifyOnMessageEvent(createDbClient),
-	}
+	session, err := discord.NewDiscordClient(conf, commandList, []models.Event{})
 
-	session, err := discord.NewDiscordClient(conf, commandList, eventList)
 	if err != nil {
 		log.Fatal(err)
 	}

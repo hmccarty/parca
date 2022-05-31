@@ -30,7 +30,7 @@ func (*PrintCalendar) Options() []m.CommandOptionMetadata {
 	return nil
 }
 
-func (cmd *PrintCalendar) Run(ctx m.CommandContext) error {
+func (cmd *PrintCalendar) Run(ctx m.ChatContext) error {
 	client := cmd.createDbClient()
 	calendarIDs, err := client.GetCalendars(ctx.ChannelID(), ctx.GuildID())
 	if err != nil {
@@ -59,6 +59,7 @@ func (cmd *PrintCalendar) Run(ctx m.CommandContext) error {
 	}
 
 	return ctx.Respond(m.Response{
+		Type:        m.AckResponse,
 		Title:       fmt.Sprintf("Calendars in #%s", channelName),
 		Description: desc,
 	})

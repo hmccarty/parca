@@ -30,7 +30,7 @@ func (*Week) Options() []m.CommandOptionMetadata {
 	return nil
 }
 
-func (cmd *Week) Run(ctx m.CommandContext) error {
+func (cmd *Week) Run(ctx m.ChatContext) error {
 	client := cmd.createDbClient()
 	calendarIDs, err := client.GetCalendars(ctx.ChannelID(), ctx.GuildID())
 	if err != nil {
@@ -39,9 +39,8 @@ func (cmd *Week) Run(ctx m.CommandContext) error {
 
 	if len(calendarIDs) == 0 {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "No calendars added to this channel",
-			Color:       m.ColorGreen,
 		})
 	}
 
@@ -67,7 +66,7 @@ func (cmd *Week) Run(ctx m.CommandContext) error {
 	}
 
 	return ctx.Respond(m.Response{
-		Type:        m.MessageResponse,
+		Type:        m.AckResponse,
 		Title:       "This week's events",
 		Description: desc,
 		Color:       m.ColorGreen,

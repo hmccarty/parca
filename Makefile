@@ -1,5 +1,5 @@
-wire:
-	wire internal/services/discord/injector.go
+test:
+	go test ./...
 
 build:
 	go build -o bot cmd/parca/main.go

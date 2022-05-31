@@ -89,8 +89,9 @@ func componentsToCmdOpts(components []dg.MessageComponent) ([]m.CommandOption, e
 			inputComponent := component.(*dg.TextInput)
 			opts = append(opts, m.CommandOption{
 				Metadata: m.CommandOptionMetadata{
-					Type: m.StringOption,
-					Name: inputComponent.Label,
+					Type:        m.StringOption,
+					Name:        inputComponent.CustomID,
+					Description: inputComponent.Label,
 				},
 				Value: inputComponent.Value,
 			})

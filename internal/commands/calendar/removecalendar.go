@@ -35,7 +35,7 @@ func (*RemoveCalendar) Options() []m.CommandOptionMetadata {
 	}
 }
 
-func (cmd *RemoveCalendar) Run(ctx m.CommandContext) error {
+func (cmd *RemoveCalendar) Run(ctx m.ChatContext) error {
 	if len(ctx.Options()) != 1 {
 		return m.ErrMissingOptions
 	}
@@ -51,9 +51,8 @@ func (cmd *RemoveCalendar) Run(ctx m.CommandContext) error {
 		return err
 	} else if !hasCalendar {
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Description: "Calendar doesn't exist in this channel",
-			Color:       m.ColorGreen,
 		})
 	}
 
@@ -63,7 +62,7 @@ func (cmd *RemoveCalendar) Run(ctx m.CommandContext) error {
 	}
 
 	return ctx.Respond(m.Response{
-		Type:        m.MessageResponse,
+		Type:        m.AckResponse,
 		Description: "Removed calendar from channel",
 	})
 }
