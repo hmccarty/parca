@@ -13,7 +13,7 @@ func createMockDbClient() m.DbClient {
 }
 
 func TestBountyBasic(t *testing.T) {
-	bounty := NewBountyCommand(createMockDbClient)
+	bounty := NewBountyCommand(5.0, createMockDbClient)
 	ctx := mock.MockChatContext{}
 	bounty.Run(&ctx)
 	fmt.Println(ctx.GetResponse())

@@ -16,9 +16,10 @@ type Poll struct {
 }
 
 type Bounty struct {
-	Title string
-	Desc  string
-	Link  string
+	Title   string
+	Desc    string
+	Link    string
+	Claimed bool
 }
 
 type MockDbClient struct {
@@ -213,6 +214,23 @@ func (c *MockDbClient) CreateBounty(bountyID, title, desc, link string) error {
 		Title: title, Desc: desc, Link: link,
 	}
 	return nil
+}
+
+func (c *MockDbClient) SetBountyAsClaimed(bountyID string) error {
+	if bounty, ok := c.Bounties[bountyID]; ok {
+		bounty.Claimed = true
+		return nil
+	} else {
+		return c.ErrCreateBounty
+	}
+}
+
+func (c *MockDbClient) WasBountyClaimed(bountyID string) (bool, error) {
+	if bounty, ok := c.Bounties[bountyID]; ok {
+		return bounty.Claimed, nil
+	} else {
+		return false, nil
+	}
 }
 
 func (c *MockDbClient) GetBounty(bountyID string) (string, string, string, error) {
