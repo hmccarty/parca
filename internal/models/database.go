@@ -31,6 +31,8 @@ type DbClient interface {
 	GetPollVote(pollID string) (int, int, error)
 
 	CreateBounty(bountyID, title, desc, link string) error
+	SetBountyAsClaimed(bountyID string) error
+	WasBountyClaimed(bountyID string) (bool, error)
 	GetBounty(bountyID string) (string, string, string, error)
 }
 

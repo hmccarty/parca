@@ -30,7 +30,8 @@ const (
 	pollYesVoteKey = "poll:%s:yes"
 	pollNoVoteKey  = "poll:%s:no"
 
-	bountyKey = "bounty:%s"
+	bountyKey      = "bounty:%s"
+	bountyClaimKey = "bounty:was_claimed"
 )
 
 func OpenRedisClient(config *c.Config) m.DbClient {
@@ -276,6 +277,24 @@ func (r *RedisClient) CreateBounty(bountyID, title, desc, link string) error {
 	}
 
 	return r.client.HMSet(ctx, key, "title", title, "desc", desc, "link", link).Err()
+}
+
+func (r *RedisClient) SetBountyAsClaimed(bountyID string) error {
+	ctx := context.Background()
+	key := fmt.Sprintf(bountyClaimKey, bountyID)
+	return r.client.Set(ctx, key, "", 0).Err()
+}
+
+func (r *RedisClient) WasBountyClaimed(bountyID string) (bool, error) {
+	ctx := context.Background()
+	key := fmt.Sprintf(bountyClaimKey, bountyID)
+	err := r.client.Get(ctx, key).Err()
+	if err == redis.Nil {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func (r *RedisClient) GetBounty(bountyID string) (string, string, string, error) {

@@ -32,8 +32,11 @@ func (*Bounty) Name() string {
 	return "bounty"
 }
 
-func (*Bounty) Description() string {
-	return "Creates a task to be completed for ARC coin"
+func (cmd *Bounty) Description() string {
+	return fmt.Sprintf(
+		"Creates a task to be completed for ARC coin (costs %.2f ARC coin)",
+		cmd.bountyAmt,
+	)
 }
 
 func (*Bounty) Options() []m.CommandOptionMetadata {
@@ -82,6 +85,25 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 		}
 
 		client := cmd.createDbClient()
+
+		senderBalance, err := client.GetUserBalance(ctx.UserID())
+		if err != nil {
+			return ctx.Respond(m.Response{
+				Type:        m.AckResponse,
+				IsEphemeral: true,
+				Description: fmt.Sprintf("Failed to get balance of <@%s>", ctx.UserID()),
+			})
+		}
+
+		if senderBalance < cmd.bountyAmt {
+			return ctx.Respond(m.Response{
+				Type:        m.AckResponse,
+				Description: fmt.Sprintf("Failed to create bounty, %.2f ARC coins are required as reward", cmd.bountyAmt),
+			})
+		}
+
+		client.SetUserBalance(ctx.UserID(), ctx.GuildID(), senderBalance-cmd.bountyAmt)
+
 		seed := rand.NewSource(time.Now().UnixNano())
 		rgen := rand.New(seed)
 		bountyID := fmt.Sprintf("%d", rgen.Intn(100000))
@@ -113,7 +135,7 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 				ctx.ChannelID(), ctx.UserID(), bountyID),
 		}
 
-		bountyDesc := fmt.Sprintf("%s \n", desc)
+		bountyDesc := fmt.Sprintf("%s \nReward: %.2f ARC coin\n", desc, cmd.bountyAmt)
 		if link != "" {
 			bountyDesc += fmt.Sprintf("Link: %s\n", link)
 		}
@@ -141,11 +163,6 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 			}
 
 			err := ctx.Respond(m.Response{
-				Type: m.MessageEditResponse,
-				,
-			})
-
-			err := ctx.Respond(m.Response{
 				Type:        m.AckResponse,
 				IsEphemeral: true,
 				Description: fmt.Sprintf("Waiting on confirmation from <@%s>...", userID),
@@ -154,10 +171,16 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 				return err
 			}
 
+			client := cmd.createDbClient()
+			title, _, _, err := client.GetBounty(bountyID)
+			if err != nil {
+				return err
+			}
+
 			err = ctx.Respond(m.Response{
 				Type:        m.DMResponse,
 				UserID:      userID,
-				Description: fmt.Sprintf("Did <@%s> complete the bounty 'insert title'?", ctx.UserID()),
+				Description: fmt.Sprintf("Did <@%s> complete the bounty '%s'?", ctx.UserID(), title),
 				Buttons: []m.ResponseButton{
 					{
 						Style: m.PrimaryButtonStyle,
@@ -182,6 +205,21 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 			bountyID := reactData[4]
 
 			client := cmd.createDbClient()
+
+			was_claimed, err := client.WasBountyClaimed(bountyID)
+			if err != nil {
+				return err
+			} else if was_claimed {
+				return ctx.Respond(m.Response{
+					Type:        m.MessageEditResponse,
+					ChannelID:   ctx.ChannelID(),
+					MessageID:   ctx.Message().ID,
+					Description: fmt.Sprintf("You've already awarded this bounty."),
+				})
+			} else {
+				client.SetBountyAsClaimed(bountyID)
+			}
+
 			title, _, _, err := client.GetBounty(bountyID)
 			if err != nil {
 				return err
@@ -221,6 +259,19 @@ func (cmd *Bounty) Run(ctx m.ChatContext) error {
 			userID, bountyID := reactData[2], reactData[4]
 
 			client := cmd.createDbClient()
+
+			was_claimed, err := client.WasBountyClaimed(bountyID)
+			if err != nil {
+				return err
+			} else if was_claimed {
+				return ctx.Respond(m.Response{
+					Type:        m.MessageEditResponse,
+					ChannelID:   ctx.ChannelID(),
+					MessageID:   ctx.Message().ID,
+					Description: fmt.Sprintf("You've already awarded this bounty."),
+				})
+			}
+
 			title, _, _, err := client.GetBounty(bountyID)
 			if err != nil {
 				return err

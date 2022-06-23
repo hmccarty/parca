@@ -5,10 +5,12 @@ Replacement for the former ARC assistant.
 ## TODO
 
 - Refactor responses to be deterministic using types (e.g. don't allow client to make assumptions about interaction response vs. unprompted msg)
+  - This is better with ack vs msg, but can be improved for message edit
 - Fix rules on bounty and reward
 - Cache reminders in case of poweroff
 - Refactor error handling and traceback (log and msg all errors)
 - Post errors for guilds that add application but not bot
+- Add abstraction for react data
 
 ## Commands
 
