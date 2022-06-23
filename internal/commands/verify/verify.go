@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"regexp"
+	"time"
 
 	m "github.com/hmccarty/parca/internal/models"
 )
@@ -75,8 +76,18 @@ func (cmd *Verify) Run(ctx m.ChatContext) error {
 			})
 		}
 
-		code := fmt.Sprintf("%d", rand.Intn(6000-1000)+1000)
-		err = cmd.emailClient.SendEmail(email, "Discord Server Verification", code)
+		seed := rand.NewSource(time.Now().UnixNano())
+		code := fmt.Sprintf("%d", rand.New(seed).Intn(6000-1000)+1000)
+
+		var subject string
+		serverName, err := ctx.GetGuildNameFromID(ctx.GuildID())
+		if err != nil {
+			subject = fmt.Sprintf("%s Server Verification Code", serverName)
+		} else {
+			subject = "Server Verification Code"
+		}
+
+		err = cmd.emailClient.SendEmail(email, subject, code)
 		if err != nil {
 			return ctx.Respond(m.Response{
 				Type:        m.AckResponse,

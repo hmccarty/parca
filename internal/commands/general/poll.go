@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"regexp"
 	"strings"
+	"time"
 
 	m "github.com/hmccarty/parca/internal/models"
 )
@@ -56,30 +57,32 @@ func (cmd *Poll) Run(ctx m.ChatContext) error {
 		invalid, err := regexp.MatchString(`[^?!0-9A-Za-z ]`, title)
 		if invalid || err != nil {
 			return ctx.Respond(m.Response{
-				Type:        m.MessageResponse,
+				Type:        m.AckResponse,
 				Description: "Invalid title, please only use alpha-numeric characters",
 			})
 		}
 
-		pollID := fmt.Sprintf("%d", rand.Intn(100000))
+		seed := rand.NewSource(time.Now().UnixNano())
+		rgen := rand.New(seed)
+		pollID := fmt.Sprintf("%d", rgen.Intn(100000))
 
 		client := cmd.createDbClient()
 		err = client.CreatePoll(title, pollID)
 		if err != nil {
 			if err == m.ErrorPollIDAlreadyExists {
 				for err == m.ErrorPollIDAlreadyExists {
-					pollID = fmt.Sprintf("%d", rand.Intn(100000))
+					pollID = fmt.Sprintf("%d", rgen.Intn(100000))
 					err = client.CreatePoll(title, pollID)
 				}
 				if err != nil {
 					return ctx.Respond(m.Response{
-						Type:        m.MessageResponse,
+						Type:        m.AckResponse,
 						Description: "Failed to create poll please try again later",
 					})
 				}
 			} else {
 				return ctx.Respond(m.Response{
-					Type:        m.MessageResponse,
+					Type:        m.AckResponse,
 					Description: "Failed to create poll please try again later",
 				})
 			}
@@ -99,7 +102,7 @@ func (cmd *Poll) Run(ctx m.ChatContext) error {
 		}
 
 		return ctx.Respond(m.Response{
-			Type:        m.MessageResponse,
+			Type:        m.AckResponse,
 			Title:       fmt.Sprintf(pollTitle, title),
 			Description: fmt.Sprintf(pollDesc, 0, 0),
 			Buttons:     buttons,
@@ -126,6 +129,19 @@ func (cmd *Poll) Run(ctx m.ChatContext) error {
 			fmt.Println(err)
 		}
 
+		buttons := []m.ResponseButton{
+			{
+				Style:     m.PrimaryButtonStyle,
+				Emoji:     m.ThumbsUpEmoji,
+				ReactData: fmt.Sprintf(pollUpReactData, pollID),
+			},
+			{
+				Style:     m.SecondaryButtonStyle,
+				Emoji:     m.ThumbsDownEmoji,
+				ReactData: fmt.Sprintf(pollDownReactData, pollID),
+			},
+		}
+
 		color := 0
 		if yesCnt > noCnt {
 			color = m.ColorGreen
@@ -133,11 +149,23 @@ func (cmd *Poll) Run(ctx m.ChatContext) error {
 			color = m.ColorRed
 		}
 
-		return ctx.Respond(m.Response{
+		err = ctx.Respond(m.Response{
 			Type:        m.MessageEditResponse,
+			MessageID:   msg.ID,
+			ChannelID:   ctx.ChannelID(),
 			Title:       fmt.Sprintf(pollTitle, title),
 			Description: fmt.Sprintf(pollDesc, yesCnt, noCnt),
+			Buttons:     buttons,
 			Color:       color,
+		})
+		if err != nil {
+			return err
+		}
+
+		return ctx.Respond(m.Response{
+			Type:        m.AckResponse,
+			IsEphemeral: true,
+			Description: "Added vote to poll",
 		})
 	}
 }

@@ -166,16 +166,7 @@ func (c *DiscordContext) Respond(resp m.Response) error {
 			return ErrNoChannelID
 		}
 
-		_, err := c.session.ChannelMessageEditComplex(
-			&dg.MessageEdit{
-				Components: getComponents(resp),
-				ID:         resp.MessageID,
-				Channel:    resp.ChannelID,
-				Embeds: []*dg.MessageEmbed{
-					getEmbed(resp),
-				},
-			},
-		)
+		_, err := c.session.ChannelMessageEditComplex(getMessageEdit(resp))
 		if err != nil {
 			return err
 		}

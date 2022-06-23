@@ -35,7 +35,7 @@ type SMTPClient struct {
 
 func (client *SMTPClient) SendEmail(recipient, subject, content string) error {
 	address := fmt.Sprintf("%s:%s", client.server, client.port)
-	msg := []byte(fmt.Sprintf("To: %s\r\n Subject: %s\r\n\r\n %s\r\n",
+	msg := []byte(fmt.Sprintf("To: %s\r\nSubject: %s\r\n\r\n%s\r\n",
 		recipient, subject, content))
 	return smtp.SendMail(address, client.auth,
 		client.sender, []string{recipient}, msg)

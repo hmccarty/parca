@@ -8,7 +8,8 @@ import (
 
 type Config struct {
 	// Commands
-	ModIDs []string `yaml:"mod_ids"`
+	BountyAmt float64  `yaml:"bounty_amt"`
+	ModIDs    []string `yaml:"mod_ids"`
 
 	// Discord
 	DiscordToken   string `yaml:"discord_token"`

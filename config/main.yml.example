@@ -1,4 +1,5 @@
 # Commands
+bounty_amt: <amt>
 mod_ids:
   - "<user id>"
 

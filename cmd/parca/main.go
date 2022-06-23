@@ -42,7 +42,7 @@ func main() {
 		gencmd.NewStatusCommand(),
 		gencmd.NewRoleMenuCommand(),
 		gencmd.NewPollCommand(createDbClient),
-		gencmd.NewBountyCommand(createDbClient),
+		gencmd.NewBountyCommand(conf.BountyAmt, createDbClient),
 		gencmd.NewRemindCommand(),
 		gencmd.NewEmbedCommand(),
 

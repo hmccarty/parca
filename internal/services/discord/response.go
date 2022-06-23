@@ -21,6 +21,26 @@ func getMessage(resp m.Response) *dg.MessageSend {
 	}
 }
 
+func getMessageEdit(resp m.Response) *dg.MessageEdit {
+	if resp.Title == "" {
+		return &dg.MessageEdit{
+			ID:         resp.MessageID,
+			Channel:    resp.ChannelID,
+			Content:    &resp.Description,
+			Components: getComponents(resp),
+		}
+	} else {
+		return &dg.MessageEdit{
+			ID:      resp.MessageID,
+			Channel: resp.ChannelID,
+			Embeds: []*dg.MessageEmbed{
+				getEmbed(resp),
+			},
+			Components: getComponents(resp),
+		}
+	}
+}
+
 func getInteraction(resp m.Response) *dg.InteractionResponse {
 	if resp.IsForm {
 		return &dg.InteractionResponse{
